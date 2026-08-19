@@ -130,10 +130,15 @@ def kiem_tra(noi_dung: str, tu_khoa: str) -> BaoCaoKiemTra:
     ))
 
     # --- 4. Mật độ từ khóa ---
-    so_lan = dem_tu_khoa(than_bai, tu_khoa)
+    # Chấm trên CỤM LÕI chứ không phải nguyên câu hỏi: với "cpu hàng tray là gì",
+    # lặp nguyên cụm 15-20 lần là bất khả thi, còn lõi "cpu hàng tray" thì tự
+    # nhiên. Đo thật trên một bài: nguyên cụm 12 lần, cụm lõi 38 lần.
+    loi = lay_tu_khoa_loi(tu_khoa)
+    so_lan = dem_tu_khoa(than_bai, loi)
     mat_do = (so_lan / so_tu * 100) if so_tu else 0.0
+    ghi_chu_loi = "" if loi == tu_khoa.strip() else f" (cụm lõi \"{loi}\")"
     them(_khoang(
-        "4. Số lần từ khóa chính", so_lan, C["tu_khoa_min"], C["tu_khoa_max"],
+        f"4. Số lần từ khóa{ghi_chu_loi}", so_lan, C["tu_khoa_min"], C["tu_khoa_max"],
         f"{C['tu_khoa_min']}–{C['tu_khoa_max']} lần", f"{so_lan} lần",
         "Thiếu — rải thêm ở phần thân bài."
         if so_lan < C["tu_khoa_min"] else
@@ -147,19 +152,19 @@ def kiem_tra(noi_dung: str, tu_khoa: str) -> BaoCaoKiemTra:
 
     # --- 5. Vị trí từ khóa ---
     them(_co_khong("5a. Từ khóa trong H1",
-                   any(_chua(h, tu_khoa) for h in h1s),
+                   any(_chua(h, loi) for h in h1s),
                    "Sửa lại H1 cho chứa từ khóa chính."))
     dau_bai = " ".join(_bo_markup(than_bai).split()[:100])
-    them(_co_khong("5b. Từ khóa trong 100 từ đầu", _chua(dau_bai, tu_khoa),
+    them(_co_khong("5b. Từ khóa trong 100 từ đầu", _chua(dau_bai, loi),
                    "Đưa từ khóa vào đoạn mở bài."))
-    h2_co_kw = sum(1 for h in h2s if _chua(h, tu_khoa))
+    h2_co_kw = sum(1 for h in h2s if _chua(h, loi))
     them(KetQuaKiemTra(
         "5c. Từ khóa trong H2", f"≥ {C['h2_chua_tu_khoa_min']} thẻ", f"{h2_co_kw} thẻ",
         DAT if h2_co_kw >= C["h2_chua_tu_khoa_min"] else CHUA_DAT,
         "" if h2_co_kw >= C["h2_chua_tu_khoa_min"] else "Thêm từ khóa vào vài H2 — nhưng đừng nhét vào tất cả.",
     ))
     them(_co_khong("5d. Từ khóa trong kết bài",
-                   _chua(" ".join(_bo_markup(than_bai).split()[-200:]), tu_khoa),
+                   _chua(" ".join(_bo_markup(than_bai).split()[-200:]), loi),
                    "Nhắc lại từ khóa ở đoạn kết."))
 
     # --- 6-7. Metadata ---
@@ -206,9 +211,17 @@ def kiem_tra(noi_dung: str, tu_khoa: str) -> BaoCaoKiemTra:
                    "Thiếu mục checklist tự kiểm tra."))
 
     # --- 13. E-E-A-T: chỉ kiểm được phần có dấu hiệu máy thấy ---
-    them(_co_khong("13a. Cảnh báo an toàn (Trust)",
-                   _tim(noi_dung, config.DAU_HIEU["canh_bao_an_toan"]),
-                   "Thiếu cảnh báo an toàn điện."))
+    # Bài về khái niệm hay so sánh không có thao tác phần cứng thì không cần
+    # cảnh báo an toàn. Máy không phân biệt được, nên để người đọc tự quyết.
+    co_canh_bao = _tim(noi_dung, config.DAU_HIEU["canh_bao_an_toan"])
+    them(KetQuaKiemTra(
+        "13a. Cảnh báo an toàn (Trust)", "có nếu bài có thao tác máy",
+        "có" if co_canh_bao else "không có",
+        DAT if co_canh_bao else CAN_NGUOI_KIEM,
+        "" if co_canh_bao else
+        "Bài có hướng dẫn tháo lắp/cắm điện thì phải có cảnh báo. "
+        "Bài thuần lý thuyết thì bỏ qua mục này.",
+    ))
     them(_co_khong("13b. Nêu giới hạn nội dung (Trust)",
                    _tim(noi_dung, config.DAU_HIEU["gioi_han"]),
                    "Thiếu câu nêu rõ giới hạn / khi nào không nên tự làm."))
@@ -227,15 +240,19 @@ def kiem_tra(noi_dung: str, tu_khoa: str) -> BaoCaoKiemTra:
                    "Thiếu khối giới thiệu đội ngũ."))
 
     ngay = _tim_ngay(noi_dung)
+    co_cho_trong = "[NGÀY ĐĂNG]" in noi_dung
     them(KetQuaKiemTra(
-        "14c. Ngày cập nhật", "đúng ngày hôm nay",
-        ngay or "không thấy",
-        CHUA_DAT if not ngay else CAN_NGUOI_KIEM,
-        "AI không biết hôm nay là ngày nào — luôn phải sửa tay trước khi đăng.",
+        "14c. Ngày cập nhật", "chỗ trống để bạn điền",
+        "[NGÀY ĐĂNG] — điền tay" if co_cho_trong else (ngay or "không thấy"),
+        DAT if co_cho_trong else (CAN_NGUOI_KIEM if ngay else CHUA_DAT),
+        "" if co_cho_trong else
+        ("AI đoán ngày sẽ ra ngày sai lệch nhiều năm — đã gặp bài ghi 24/10/2023. "
+         "Sửa tay trước khi đăng."
+         if ngay else "Thiếu ngày cập nhật — thêm vào đầu hoặc cuối bài."),
     ))
 
     # --- 15. Nhồi từ khóa ---
-    cau_nhoi = tim_cau_nhoi_tu_khoa(than_bai, tu_khoa)
+    cau_nhoi = tim_cau_nhoi_tu_khoa(than_bai, loi)
     them(KetQuaKiemTra(
         "15. Câu lặp từ khóa ≥2 lần", "0 câu", f"{len(cau_nhoi)} câu",
         DAT if not cau_nhoi else CHUA_DAT,
@@ -271,6 +288,50 @@ def dem_tu_khoa(noi_dung: str, tu_khoa: str) -> int:
     return len(re.findall(re.escape(_chuan_hoa(tu_khoa)), _chuan_hoa(noi_dung)))
 
 
+# Những chữ biến một danh từ thành câu hỏi. Bỏ chúng đi sẽ còn lại phần lõi —
+# thứ thực sự được lặp lại tự nhiên trong bài.
+_DAU_CAU_HOI = [
+    "cach", "huong dan", "tai sao", "co nen", "so sanh", "review", "top",
+    "mua", "noi ban", "dia chi ban", "lam sao", "lam the nao",
+]
+_DUOI_CAU_HOI = [
+    "la gi", "gia bao nhieu", "bao nhieu", "loai nao tot", "o dau",
+    "nhu the nao", "ra sao", "co tot khong", "khong", "tot nhat", "nen mua",
+]
+
+
+def lay_tu_khoa_loi(tu_khoa: str) -> str:
+    """
+    Bóc phần lõi của từ khóa bằng cách bỏ các chữ dùng để hỏi.
+
+    VÌ SAO CẦN
+        Với từ khóa "cpu hàng tray là gì", đếm nguyên cụm chỉ ra 12 lần trong khi
+        cụm lõi "cpu hàng tray" xuất hiện 38 lần. Lặp nguyên câu hỏi 15–20 lần là
+        bất khả thi và đọc lên rất gượng — Google cũng không đòi hỏi vậy. Phần lõi
+        mới là thứ đáng đếm.
+
+    Trả về chính từ khóa gốc nếu bóc xong không còn gì đáng kể.
+    """
+    tu = tu_khoa.strip().split()
+    if not tu:
+        return tu_khoa
+
+    # Cắt theo SỐ TỪ trên danh sách đã tách, để chữ trả về vẫn còn nguyên dấu.
+    for dau in sorted(_DAU_CAU_HOI, key=lambda x: -len(x.split())):
+        n = len(dau.split())
+        if len(tu) > n and _chuan_hoa(" ".join(tu[:n])) == dau:
+            tu = tu[n:]
+            break
+    for duoi in sorted(_DUOI_CAU_HOI, key=lambda x: -len(x.split())):
+        n = len(duoi.split())
+        if len(tu) > n and _chuan_hoa(" ".join(tu[-n:])) == duoi:
+            tu = tu[:-n]
+            break
+
+    # Bóc quá tay, còn lại một chữ trơ trọi thì giữ nguyên từ khóa gốc.
+    return " ".join(tu) if len(tu) >= 2 else tu_khoa.strip()
+
+
 def dem_link(noi_dung: str):
     """Tách link nội bộ và link ra ngoài. Trả về (internal, external), đã bỏ trùng."""
     tat_ca = re.findall(r"https?://[^\s\)\]\">]+", noi_dung)
@@ -303,11 +364,31 @@ def tim_so_lieu_nghi_bia(noi_dung: str) -> List[str]:
     """
     kq = []
     for cau in re.split(r"(?<=[.!?…])\s+|\n", _bo_markup(noi_dung)):
-        if re.search(r"\d{1,3}\s?%|\b\d{2,4}\s+(ca|trường hợp|khách|lượt)\b", cau, re.I):
-            if re.search(r"mật độ|từ khóa|SEO Title|Meta", cau, re.I):
-                continue
-            kq.append(cau.strip())
+        if not re.search(r"\d{1,3}\s?%|\b\d{2,4}\s+(ca|trường hợp|khách|lượt)\b", cau, re.I):
+            continue
+        if re.search(r"mật độ|từ khóa|SEO Title|Meta", cau, re.I):
+            continue        # câu đang bàn về chính bài viết, không phải số liệu
+        if _la_cach_noi_quen(cau):
+            continue
+        kq.append(cau.strip())
     return kq
+
+
+# "mới 100%", "cam kết 100% chính hãng" là cách nói quen của ngành bán lẻ VN,
+# không phải số liệu thống kê. Bản đầu bắt nhầm 5/5 câu kiểu này nên phải lọc.
+_CACH_NOI_QUEN = re.compile(
+    r"(mới|nguyên|chính hãng|cam kết|đảm bảo|bảo đảm|hoàn toàn|zin)\s*100\s?%"
+    r"|100\s?%\s*(chính hãng|mới|nguyên|zin|new)",
+    re.I,
+)
+
+
+def _la_cach_noi_quen(cau: str) -> bool:
+    """Câu chỉ chứa '100%' theo lối nói quen thì bỏ qua, không coi là số liệu."""
+    if _CACH_NOI_QUEN.search(cau):
+        # Vẫn báo nếu trong câu còn phần trăm KHÁC 100 — đó mới là số đáng ngờ.
+        return not re.search(r"\b(?!100\b)\d{1,3}\s?%", cau)
+    return False
 
 
 # =============================================================================
@@ -324,8 +405,12 @@ def _lay_than_bai(noi_dung: str):
     Trả về (thân_bài, mô_tả_phạm_vi). Phần mô tả được hiện lên giao diện để
     người dùng biết chữ mình vừa sửa có nằm trong vùng đếm hay không.
     """
-    bat_dau = re.search(r"^#*\s*PHẦN\s*2\b.*$", noi_dung, re.M | re.I)
-    ket_thuc = re.search(r"^#*\s*PHẦN\s*3\b.*$", noi_dung, re.M | re.I)
+    # Chấp nhận cả "# PHẦN 2", "**PHẦN 2**" và "PHẦN 2" trần.
+    # Prompt mới cố tình KHÔNG dùng # cho các mốc này, vì dùng # thì WordPress
+    # hiểu thành thẻ H1 và bài có 3-4 H1 thay vì 1.
+    moc = r"^[#*\s]*PHẦN\s*{n}\b.*$"
+    bat_dau = re.search(moc.format(n=2), noi_dung, re.M | re.I)
+    ket_thuc = re.search(moc.format(n=3), noi_dung, re.M | re.I)
     dau = bat_dau.end() if bat_dau else 0
     cuoi = ket_thuc.start() if ket_thuc else len(noi_dung)
     than = noi_dung[dau:cuoi].strip()
@@ -364,8 +449,16 @@ def _bo_markup(t: str) -> str:
 
 
 def _chuan_hoa(t: str) -> str:
-    """Bỏ dấu và chuyển thường, để 'Máy Tính' khớp với 'máy tính'."""
-    t = unicodedata.normalize("NFD", t.lower())
+    """
+    Bỏ dấu và chuyển thường, để 'Máy Tính' khớp với 'máy tính'.
+
+    Phải xử lý riêng chữ đ: NFD tách được dấu của â, ê, ô... nhưng KHÔNG tách
+    được đ (U+0111 là một ký tự riêng, không phải d + dấu gạch). Bỏ sót chỗ này
+    khiến "ở đâu" chuẩn hóa thành "o đau" chứ không phải "o dau" — đã làm hỏng
+    việc bóc cụm lõi của từ khóa "laptop cũ ở đâu".
+    """
+    t = t.lower().replace("đ", "d")
+    t = unicodedata.normalize("NFD", t)
     return "".join(c for c in t if unicodedata.category(c) != "Mn")
 
 

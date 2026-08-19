@@ -24,7 +24,7 @@ NHA_CUNG_CAP_MAC_DINH = "gemini"
 GEMINI_MODEL_MAC_DINH = "gemini-3.6-flash"
 CLAUDE_MODEL_MAC_DINH = "claude-opus-5"
 MAX_TOKENS_MAC_DINH = 24000
-TIMEOUT_MAC_DINH = 180
+TIMEOUT_MAC_DINH = 420
 
 # =============================================================================
 # 3. BẢNG GIÁ (USD cho 1 triệu token) — để ước tính chi phí hiển thị
@@ -49,15 +49,16 @@ TY_GIA_VND = 26000
 # nhưng bảng trông rất thuyết phục. Sửa số ở đây nếu bạn đổi chuẩn.
 
 CHUAN_SEO = {
-    "so_tu_toi_thieu": 3500,
-    "so_tu_toi_da": 4200,
+    "so_tu_toi_thieu": 3000,
+    "so_tu_toi_da": 4000,
     "so_h1": 1,
-    "so_h2_toi_thieu": 10,
+    "so_h2_toi_thieu": 8,
+    "so_h2_toi_da": 12,
     "tu_khoa_min": 15,
     "tu_khoa_max": 20,
     "mat_do_min": 0.40,          # phần trăm
     "mat_do_max": 0.55,
-    "h2_chua_tu_khoa_min": 4,
+    "h2_chua_tu_khoa_min": 3,
     "title_toi_da": 60,          # ký tự
     "meta_min": 140,
     "meta_max": 158,

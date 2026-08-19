@@ -28,9 +28,15 @@ venv/
 # LOG / FILE TẠM
 # =============================================================================
 *.log
-_run_*.log
-_diag*.py
-_test_*.py
+
+# File nháp khi thử nghiệm — quy ước: mọi file tạm đều bắt đầu bằng dấu gạch dưới.
+# Dùng một quy tắc chung thay vì liệt kê từng tên, vì đã có lần _t3.py và
+# _k_*.md lọt vào vùng chờ commit.
+_*.py
+_*.md
+_*.txt
+_*.html
+_*.log
 
 # =============================================================================
 # HỆ ĐIỀU HÀNH / IDE
