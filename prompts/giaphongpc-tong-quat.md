@@ -98,7 +98,8 @@ Nếu một câu đọc lên thấy gượng vì có từ khóa, **bỏ từ kh�
 "lỗi này", "hiện tượng trên", "tình trạng này", hoặc biến thể tự nhiên. Một câu trôi chảy
 không chứa từ khóa có giá trị hơn một câu gãy nghĩa có từ khóa.
 
-Nhớ đưa từ khóa vào **đoạn kết bài** — đây là chỗ hay bị quên nhất.
+Nhớ đưa từ khóa vào **đoạn kết luận** — đặt trong 2–3 câu tổng kết, TRƯỚC phần kêu gọi liên hệ
+và phần giới thiệu đội ngũ. Chạy thử 3 bài thì cả 3 đều quên chỗ này.
 
 ## Quy tắc về số liệu — QUAN TRỌNG NHẤT
 
@@ -132,7 +133,11 @@ theo thời điểm".
 - **Expertise** — giải thích đúng bản chất kỹ thuật. Mở ngoặc giải nghĩa mọi từ viết tắt
   ở lần xuất hiện đầu tiên, ví dụ: POST (Power-On Self-Test — quá trình tự kiểm tra khi bật máy).
   Nêu cả bước mà bài của đối thủ hay bỏ sót.
-- **Authoritativeness** — 1–2 link ra nguồn uy tín. Không link sang cửa hàng đối thủ.
+- **Authoritativeness** — **bắt buộc** chèn 1–2 link ra nguồn uy tín. Đây là mục hay bị bỏ sót
+  nhất; chạy thử 3 bài thì cả 3 đều thiếu. Chọn trang chủ nhà sản xuất hoặc tài liệu kỹ thuật,
+  ví dụ: intel.com · amd.com · nvidia.com · support.microsoft.com · vesa.org · jedec.org.
+  Đặt link ngay trong câu nói về thông số hoặc chuẩn kỹ thuật liên quan, đừng gom vào cuối bài.
+  Không link sang cửa hàng máy tính khác.
 - **Trust** — nêu rõ "nội dung mang tính tham khảo", cảnh báo an toàn điện nếu bài có thao tác
   phần cứng, nói thẳng khi nào người đọc **không nên** tự làm.
 

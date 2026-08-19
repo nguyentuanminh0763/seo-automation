@@ -134,7 +134,11 @@ def kiem_tra(noi_dung: str, tu_khoa: str) -> BaoCaoKiemTra:
     # lặp nguyên cụm 15-20 lần là bất khả thi, còn lõi "cpu hàng tray" thì tự
     # nhiên. Đo thật trên một bài: nguyên cụm 12 lần, cụm lõi 38 lần.
     loi = lay_tu_khoa_loi(tu_khoa)
-    so_lan = dem_tu_khoa(than_bai, loi)
+    # Đếm từ khóa trên CÙNG văn bản đã bỏ markup như lúc đếm từ. Bản đầu đếm từ
+    # trên bản đã lọc còn đếm từ khóa trên bản thô, nên mật độ là phép chia của
+    # hai đại lượng khác cơ sở — có bài ra 6,17% trong khi thực tế khoảng 1,7%.
+    than_sach = _bo_markup(than_bai)
+    so_lan = dem_tu_khoa(than_sach, loi)
     mat_do = (so_lan / so_tu * 100) if so_tu else 0.0
     ghi_chu_loi = "" if loi == tu_khoa.strip() else f" (cụm lõi \"{loi}\")"
     them(_khoang(
@@ -163,9 +167,12 @@ def kiem_tra(noi_dung: str, tu_khoa: str) -> BaoCaoKiemTra:
         DAT if h2_co_kw >= C["h2_chua_tu_khoa_min"] else CHUA_DAT,
         "" if h2_co_kw >= C["h2_chua_tu_khoa_min"] else "Thêm từ khóa vào vài H2 — nhưng đừng nhét vào tất cả.",
     ))
+    # Cửa sổ 350 từ chứ không phải 200: bài luôn kết bằng CTA + giới thiệu đội ngũ
+    # dài khoảng 200 từ, những khối đó tự nhiên không chứa từ khóa. Đo trên bài
+    # thật, đoạn kết luận có từ khóa nằm ở mốc 300 từ tính từ cuối.
     them(_co_khong("5d. Từ khóa trong kết bài",
-                   _chua(" ".join(_bo_markup(than_bai).split()[-200:]), loi),
-                   "Nhắc lại từ khóa ở đoạn kết."))
+                   _chua(" ".join(_bo_markup(than_bai).split()[-350:]), loi),
+                   "Nhắc lại từ khóa ở đoạn kết luận (trước phần CTA)."))
 
     # --- 6-7. Metadata ---
     them(_do_dai("6. Độ dài SEO Title", meta.get("title"),
@@ -440,12 +447,31 @@ def _boc_metadata(noi_dung: str) -> dict:
 
 
 def _bo_markup(t: str) -> str:
-    t = re.sub(r"^\|.*\|$", " ", t, flags=re.M)     # bảng
-    t = re.sub(r"<[^>]+>", " ", t)                  # thẻ HTML
-    t = re.sub(r"\[ẢNH[^\]]*\]", " ", t)            # đánh dấu ảnh
-    t = re.sub(r"https?://\S+", " ", t)             # URL
+    """
+    Bỏ ký hiệu định dạng, GIỮ LẠI chữ mà người đọc thực sự đọc.
+
+    Bản đầu xóa nguyên mọi dòng bảng bằng ^\\|.*\\|$. Với bài so sánh hay bài
+    về giá — nơi bảng CHÍNH LÀ nội dung — cách đó cắt mất phần lớn bài: một bài
+    22.557 ký tự bị đếm thành 1.247 từ. Giờ chỉ bỏ dấu gạch đứng và dòng kẻ
+    ngăn cách, còn chữ trong ô vẫn được tính.
+    """
+    t = re.sub(r"^\s*\|[\s:|-]+\|\s*$", " ", t, flags=re.M)   # dòng |---|---|
+    t = t.replace("|", " ")                                    # giữ chữ trong ô
+    t = re.sub(_THE_HTML, " ", t)                              # thẻ HTML
+    t = re.sub(r"\[ẢNH[^\]]*\]", " ", t)                       # đánh dấu ảnh
+    t = re.sub(r"https?://\S+", " ", t)                        # URL
     t = re.sub(r"[#*_`>\[\]()]", " ", t)
     return t
+
+
+# Thẻ HTML thật: sau dấu < phải là chữ cái (hoặc / rồi chữ cái), và bên trong
+# KHÔNG được chứa dấu < hay xuống dòng.
+#
+# Bản đầu dùng <[^>]+> nên dấu "<" trong câu "Delta E < 2" khớp tới tận dấu ">"
+# của một dòng trích dẫn ở xa, nuốt mất 16.252 trên 21.696 ký tự — tức 75% bài.
+# Bài công nghệ nào cũng có "< 2ms", "> 144Hz", nên lỗi này làm sai số từ của
+# gần như mọi bài so sánh thông số.
+_THE_HTML = re.compile(r"</?[a-zA-Z][^<>\n]*>")
 
 
 def _chuan_hoa(t: str) -> str:
