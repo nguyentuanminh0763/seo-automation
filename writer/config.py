@@ -22,6 +22,18 @@ CHO_CHEN_TU_KHOA = "{keyword}"
 # =============================================================================
 NHA_CUNG_CAP_MAC_DINH = "gemini"
 GEMINI_MODEL_MAC_DINH = "gemini-3.6-flash"
+
+# Gói Gemini miễn phí giới hạn ~20 lượt/NGÀY cho MỖI model. Hết model này thì
+# các model khác vẫn còn nguyên hạn mức, nên khi bị chặn, công cụ sẽ thử lần
+# lượt danh sách dưới đây và gợi ý model còn dùng được.
+# Xếp theo thứ tự ưu tiên về chất lượng.
+MODEL_DU_PHONG = [
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+    "gemini-3.1-flash-lite",
+]
 CLAUDE_MODEL_MAC_DINH = "claude-opus-5"
 MAX_TOKENS_MAC_DINH = 24000
 TIMEOUT_MAC_DINH = 420

@@ -111,10 +111,23 @@ class NhaCungCapGemini:
             # Chỉ thử lại với lỗi TẠM THỜI. Sai key hay sai tên model thì có
             # thử bao nhiêu lần cũng vậy, báo ngay cho người dùng biết.
             la_tam_thoi = phan_hoi.status_code in (429, 500, 503)
+
+            # Hết hạn mức NGÀY thì thử lại chỉ tốn thêm lượt của model khác và
+            # kéo dài thời gian chờ vô ích — dừng ngay để báo cách gỡ.
+            if phan_hoi.status_code == 429:
+                chi_tiet = self._boc_chi_tiet_han_muc(phan_hoi)
+                if "PerDay" in chi_tiet.get("quota_id", ""):
+                    raise LoiGoiAI(self._giai_thich_loi(phan_hoi))
+
             if not la_tam_thoi or lan_thu == SO_LAN_THU_LAI:
                 raise LoiGoiAI(self._giai_thich_loi(phan_hoi))
 
-            cho = GIAY_CHO_GIUA_CAC_LAN * lan_thu     # 8s -> 16s -> 24s
+            if phan_hoi.status_code == 429:
+                # Hạn mức theo phút: nghe theo con số Google đưa, cộng 2 giây đệm.
+                cho = (self._boc_chi_tiet_han_muc(phan_hoi).get("cho_giay") or 30) + 2
+            else:
+                cho = GIAY_CHO_GIUA_CAC_LAN * lan_thu     # 8s -> 16s -> 24s
+
             log.warning("Model đang bận (lỗi %d). Tự thử lại lần %d/%d sau %d giây...",
                         phan_hoi.status_code, lan_thu + 1, SO_LAN_THU_LAI, cho)
             time.sleep(cho)
@@ -188,8 +201,7 @@ class NhaCungCapGemini:
                     f"Chọn một cái, sửa dòng GEMINI_MODEL trong file .env.")
 
         if ma == 429:
-            return ("Đã chạm giới hạn của gói miễn phí.\n"
-                    "Chờ ít phút rồi thử lại. Gói free giới hạn số lượt mỗi phút và mỗi ngày.")
+            return self._giai_thich_het_han_muc(phan_hoi)
 
         if ma in (500, 503):
             return (f"Model '{self.st.model}' đang quá tải.\n\n"
@@ -198,6 +210,93 @@ class NhaCungCapGemini:
                     f"trong file .env.")
 
         return f"Google báo lỗi {ma}: {chi_tiet}"
+
+    def _giai_thich_het_han_muc(self, phan_hoi) -> str:
+        """
+        Giải thích lỗi 429 cho đúng bản chất.
+
+        Google phân biệt hai loại hạn mức, xử lý khác hẳn nhau:
+          - Theo PHÚT: chờ vài chục giây là dùng tiếp được.
+          - Theo NGÀY : chờ bao lâu trong hôm nay cũng vô ích.
+
+        Bản đầu gộp chung, khuyên "chờ ít phút rồi thử lại" cho cả hai — sai
+        hoàn toàn với hạn mức ngày. Đã gặp thật: gemini-3.6-flash giới hạn
+        20 lượt/ngày, retry 8s rồi 16s chỉ tốn thêm 2 lượt vô ích.
+
+        Điểm mấu chốt: hạn mức tính RIÊNG cho từng model. Hết model này vẫn
+        còn model khác, nên gợi ý đổi model là cách gỡ nhanh nhất.
+        """
+        chi_tiet = self._boc_chi_tiet_han_muc(phan_hoi)
+        theo_ngay = "PerDay" in chi_tiet.get("quota_id", "")
+        gioi_han = chi_tiet.get("gioi_han")
+        mo_ta_gioi_han = f" ({gioi_han} lượt/ngày)" if gioi_han and theo_ngay else ""
+
+        if not theo_ngay:
+            cho = chi_tiet.get("cho_giay") or 60
+            return (f"Chạm giới hạn theo phút của gói miễn phí.\n"
+                    f"Chờ khoảng {cho} giây rồi bấm Viết lại.")
+
+        con_dung = self.tim_model_con_han_muc()
+        if con_dung:
+            ds = "\n".join(f"    GEMINI_MODEL={m}" for m in con_dung[:4])
+            goi_y = (f"Hạn mức tính RIÊNG cho từng model, nên đổi model là dùng tiếp được ngay.\n"
+                     f"Mở file .env, sửa dòng GEMINI_MODEL thành một trong các model còn hạn mức:\n\n"
+                     f"{ds}")
+        else:
+            goi_y = ("Các model đã thử đều hết hạn mức hôm nay."
+                     "\nChờ sang ngày mới, hoặc dùng Claude (đổi NHA_CUNG_CAP=claude).")
+
+        return (f"Model '{self.st.model}' đã hết hạn mức MIỄN PHÍ của hôm nay{mo_ta_gioi_han}.\n\n"
+                f"Chờ thêm trong hôm nay cũng không dùng được — đây là hạn mức theo NGÀY,\n"
+                f"thường được cấp lại vào khoảng 14–15 giờ Việt Nam.\n\n"
+                f"{goi_y}")
+
+    @staticmethod
+    def _boc_chi_tiet_han_muc(phan_hoi) -> dict:
+        """Bóc quotaId, quotaValue và retryDelay ra khỏi phần details của lỗi 429."""
+        kq: dict = {}
+        try:
+            details = phan_hoi.json().get("error", {}).get("details", []) or []
+        except (ValueError, json.JSONDecodeError):
+            return kq
+
+        for d in details:
+            loai = d.get("@type", "")
+            if "QuotaFailure" in loai:
+                vi_pham = (d.get("violations") or [{}])[0]
+                kq["quota_id"] = vi_pham.get("quotaId", "")
+                kq["gioi_han"] = vi_pham.get("quotaValue")
+            elif "RetryInfo" in loai:
+                khop = re.match(r"(\d+)", str(d.get("retryDelay", "")))
+                if khop:
+                    kq["cho_giay"] = int(khop.group(1))
+        return kq
+
+    def tim_model_con_han_muc(self) -> List[str]:
+        """
+        Thử từng model dự phòng bằng một yêu cầu cực ngắn để xem còn dùng được không.
+
+        Mỗi lần thử tiêu tốn 1 lượt của model đó, nên chỉ gọi khi đã thực sự
+        hết hạn mức — lúc đó thông tin này đáng giá hơn một lượt.
+        """
+        ket_qua = []
+        for model in config.MODEL_DU_PHONG:
+            if model == self.st.model:
+                continue
+            try:
+                phan_hoi = requests.post(
+                    f"{URL_GEMINI}/models/{model}:generateContent",
+                    headers={"x-goog-api-key": self.st.api_key,
+                             "Content-Type": "application/json"},
+                    json={"contents": [{"parts": [{"text": "ok"}]}],
+                          "generationConfig": {"maxOutputTokens": 5}},
+                    timeout=25,
+                )
+                if phan_hoi.status_code == 200:
+                    ket_qua.append(model)
+            except Exception:  # noqa: BLE001 - chỉ là gợi ý, hỏng cũng không sao
+                continue
+        return ket_qua
 
     @staticmethod
     def _tim_model_thay_the(thong_diep: str) -> str:

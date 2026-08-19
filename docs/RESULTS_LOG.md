@@ -61,6 +61,22 @@ khớp luật nào. Cần bổ sung luật phân loại chi tiết hơn trong `s
 | 2026-08-19 17:43 | cách khắc phục loa máy tính bàn không nghe được | gemini-3.6-flash | 1.455 | ~55 giây | miễn phí |
 | 2026-08-19 17:30 | cách kiểm tra ram máy tính có bị lỗi không | gemini-3.6-flash | 1.498 | 55 giây | miễn phí |
 
+### ⚠ HẠN MỨC GÓI MIỄN PHÍ — điều quan trọng nhất cần biết
+
+**~20 lượt/NGÀY cho MỖI model.** Không phải theo phút.
+
+Google trả về `quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier`, `quotaValue: 20`.
+Chờ trong hôm nay không dùng được nữa; hạn mức thường được cấp lại khoảng **14–15 giờ VN**.
+
+**Cách gỡ nhanh nhất: đổi model.** Hạn mức tính riêng cho từng model, nên hết model này
+vẫn còn nguyên hạn mức ở model khác. Đã kiểm chứng ngày 2026-08-19: `gemini-3.6-flash`
+hết 20 lượt trong khi 4 model khác vẫn dùng được bình thường.
+
+Thứ tự ưu tiên đổi: `gemini-3.7-flash` → `gemini-3.6-flash` → `gemini-3.5-flash`
+→ `gemini-flash-latest` → `gemini-3.1-flash-lite`
+
+Nghĩa là mỗi ngày có khoảng **100 lượt miễn phí** nếu xoay vòng 5 model.
+
 ### Ghi chú quan trọng về model Gemini
 
 | Model | Trạng thái |
