@@ -37,7 +37,8 @@ class LuongChay(threading.Thread):
         super().__init__(daemon=True)
         self.ham_thu_thap = ham_thu_thap
         self.ket_qua: Optional[pd.DataFrame] = None
-        self.loi: Optional[str] = None
+        self.loi: Optional[str] = None          # traceback đầy đủ, để ghi log
+        self.loi_goc: Optional[BaseException] = None   # đối tượng lỗi gốc
         self._co_dung = threading.Event()
 
     def yeu_cau_dung(self) -> None:
@@ -51,5 +52,10 @@ class LuongChay(threading.Thread):
     def run(self) -> None:
         try:
             self.ket_qua = self.ham_thu_thap(self.da_yeu_cau_dung)
-        except Exception:  # noqa: BLE001 - luồng nền chết âm thầm thì không ai biết
+        except Exception as loi:  # noqa: BLE001 - luồng nền chết âm thầm thì không ai biết
+            # Giữ CẢ HAI: traceback để ghi log, và đối tượng lỗi để lấy nguyên
+            # văn thông điệp. Bản đầu chỉ giữ traceback rồi cắt lấy dòng cuối,
+            # làm mất sạch phần hướng dẫn nhiều dòng — đã gặp thật khi Google
+            # báo tên model cần đổi mà hộp thoại chỉ hiện câu cuối cùng.
             self.loi = traceback.format_exc()
+            self.loi_goc = loi

@@ -219,9 +219,8 @@ class TabWriter(ttk.Frame):
 
         if loi is not None:
             self._doi_trang_thai("Có lỗi xảy ra.", "#c00")
-            thong_bao = self._rut_gon_loi(loi)
-            self.hop_log.them_dong(40, thong_bao)
-            messagebox.showerror("Không viết được bài", thong_bao)
+            self.hop_log.them_dong(40, loi)
+            messagebox.showerror("Không viết được bài", loi)
             return
 
         if bai is None:
@@ -365,24 +364,11 @@ class TabWriter(ttk.Frame):
 
         if self.luong is not None and not self.luong.is_alive():
             luong_xong, self.luong = self.luong, None
-            self._hoan_tat(luong_xong.ket_qua, luong_xong.loi)
+            # Dùng thông điệp NGUYÊN VĂN của lỗi, không phải traceback cắt cụt.
+            thong_bao = str(luong_xong.loi_goc) if luong_xong.loi_goc else None
+            self._hoan_tat(luong_xong.ket_qua, thong_bao)
 
         self.after(CHU_KY_DOC_LOG_MS, self._doc_hang_doi_log)
 
     def _doi_trang_thai(self, chu: str, mau: str) -> None:
         self.nhan_trang_thai.configure(text=chu, foreground=mau)
-
-    @staticmethod
-    def _rut_gon_loi(traceback_day_du: str) -> str:
-        """
-        Lấy dòng cuối của traceback — chỗ chứa thông điệp đã viết cho người dùng.
-        Người dùng không cần thấy toàn bộ traceback Python.
-        """
-        cac_dong = [d for d in traceback_day_du.strip().split("\n") if d.strip()]
-        if not cac_dong:
-            return "Lỗi không rõ."
-        dong_cuoi = cac_dong[-1]
-        for nhan in ("LoiGoiAI:", "ThieuCauHinh:", "ValueError:", "Exception:"):
-            if nhan in dong_cuoi:
-                return dong_cuoi.split(nhan, 1)[1].strip().replace("\\n", "\n")
-        return dong_cuoi

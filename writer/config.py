@@ -21,7 +21,7 @@ CHO_CHEN_TU_KHOA = "{keyword}"
 # 2. MẶC ĐỊNH (bị .env ghi đè nếu .env có khai báo)
 # =============================================================================
 NHA_CUNG_CAP_MAC_DINH = "gemini"
-GEMINI_MODEL_MAC_DINH = "gemini-2.5-flash"
+GEMINI_MODEL_MAC_DINH = "gemini-3.6-flash"
 CLAUDE_MODEL_MAC_DINH = "claude-opus-5"
 MAX_TOKENS_MAC_DINH = 8000
 TIMEOUT_MAC_DINH = 180

@@ -8,15 +8,24 @@ thêm nhà cung cấp thứ ba chỉ cần thêm một lớp ở file này.
 """
 
 import json
+import re
+import time
 from dataclasses import dataclass
 from typing import List, Optional
 
 import requests
 
 from . import config
+from .logger import lay_log
 from .settings import Settings
 
+log = lay_log()
+
 URL_GEMINI = "https://generativelanguage.googleapis.com/v1beta"
+
+# Gói miễn phí hay bị quá tải tạm thời -> tự thử lại vài lần trước khi báo lỗi.
+SO_LAN_THU_LAI = 3
+GIAY_CHO_GIUA_CAC_LAN = 8
 
 
 class LoiGoiAI(Exception):
@@ -61,34 +70,56 @@ class NhaCungCapGemini:
         self.st = st
 
     def viet_bai(self, prompt: str, nen_dung=None) -> KetQua:
+        """
+        Gọi Gemini, tự thử lại khi model quá tải.
+
+        Gói miễn phí dùng chung tài nguyên với rất nhiều người nên hay gặp
+        503 "high demand" — lỗi tạm thời, chờ vài giây là qua. Đã gặp thật
+        khi test, nên tự thử lại thay vì bắt người dùng bấm đi bấm lại.
+        """
         url = f"{URL_GEMINI}/models/{self.st.model}:generateContent"
         than_yeu_cau = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"maxOutputTokens": self.st.max_tokens},
         }
 
-        try:
-            phan_hoi = requests.post(
-                url,
-                headers={
-                    "x-goog-api-key": self.st.api_key,
-                    "Content-Type": "application/json",
-                },
-                json=than_yeu_cau,
-                timeout=self.st.timeout,
-            )
-        except requests.Timeout:
-            raise LoiGoiAI(
-                f"Quá {self.st.timeout} giây chưa thấy hồi âm.\n"
-                f"Thử tăng TIMEOUT trong file .env, hoặc kiểm tra mạng."
-            ) from None
-        except requests.RequestException as loi:
-            raise LoiGoiAI(f"Không kết nối được tới Google: {loi}") from None
+        for lan_thu in range(1, SO_LAN_THU_LAI + 1):
+            if nen_dung is not None and nen_dung():
+                raise LoiGoiAI("Đã dừng theo yêu cầu.")
 
-        if phan_hoi.status_code != 200:
-            raise LoiGoiAI(self._giai_thich_loi(phan_hoi))
+            try:
+                phan_hoi = requests.post(
+                    url,
+                    headers={
+                        "x-goog-api-key": self.st.api_key,
+                        "Content-Type": "application/json",
+                    },
+                    json=than_yeu_cau,
+                    timeout=self.st.timeout,
+                )
+            except requests.Timeout:
+                raise LoiGoiAI(
+                    f"Quá {self.st.timeout} giây chưa thấy hồi âm.\n"
+                    f"Thử tăng TIMEOUT trong file .env, hoặc kiểm tra mạng."
+                ) from None
+            except requests.RequestException as loi:
+                raise LoiGoiAI(f"Không kết nối được tới Google: {loi}") from None
 
-        return self._doc_ket_qua(phan_hoi.json())
+            if phan_hoi.status_code == 200:
+                return self._doc_ket_qua(phan_hoi.json())
+
+            # Chỉ thử lại với lỗi TẠM THỜI. Sai key hay sai tên model thì có
+            # thử bao nhiêu lần cũng vậy, báo ngay cho người dùng biết.
+            la_tam_thoi = phan_hoi.status_code in (429, 500, 503)
+            if not la_tam_thoi or lan_thu == SO_LAN_THU_LAI:
+                raise LoiGoiAI(self._giai_thich_loi(phan_hoi))
+
+            cho = GIAY_CHO_GIUA_CAC_LAN * lan_thu     # 8s -> 16s -> 24s
+            log.warning("Model đang bận (lỗi %d). Tự thử lại lần %d/%d sau %d giây...",
+                        phan_hoi.status_code, lan_thu + 1, SO_LAN_THU_LAI, cho)
+            time.sleep(cho)
+
+        raise LoiGoiAI("Không gọi được Gemini sau nhiều lần thử.")
 
     # ------------------------------------------------------------------
 
@@ -136,10 +167,23 @@ class NhaCungCapGemini:
                     "Lấy key mới tại https://aistudio.google.com")
 
         if ma == 404:
-            # Lỗi hay gặp nhất: tên model đã đổi. Liệt kê luôn model dùng được.
+            # Google thường nói thẳng tên model thay thế ngay trong thông điệp,
+            # ví dụ: "gemini-2.5-flash is no longer available to new users.
+            #         Please update your code to use models/gemini-3.6-flash".
+            # Nên ƯU TIÊN đưa nguyên văn câu đó cho người dùng — nó chính xác
+            # hơn danh sách tự liệt kê, vì ListModels vẫn trả về cả những model
+            # đã ngừng mở cho người dùng mới.
+            ten_thay_the = self._tim_model_thay_the(chi_tiet)
+            if ten_thay_the:
+                return (f"Model '{self.st.model}' không dùng được nữa.\n\n"
+                        f"Google đề xuất thay bằng:  {ten_thay_the}\n\n"
+                        f"Mở file .env, sửa dòng GEMINI_MODEL thành:\n"
+                        f"GEMINI_MODEL={ten_thay_the}")
+
             ds = self.liet_ke_model()
-            goi_y = "\n".join(f"  {m}" for m in ds[:12]) if ds else "  (không lấy được danh sách)"
+            goi_y = "\n".join(f"  {m}" for m in ds[:15]) if ds else "  (không lấy được danh sách)"
             return (f"Không tìm thấy model '{self.st.model}'.\n\n"
+                    f"Google báo: {chi_tiet}\n\n"
                     f"Các model tài khoản bạn đang dùng được:\n{goi_y}\n\n"
                     f"Chọn một cái, sửa dòng GEMINI_MODEL trong file .env.")
 
@@ -147,7 +191,22 @@ class NhaCungCapGemini:
             return ("Đã chạm giới hạn của gói miễn phí.\n"
                     "Chờ ít phút rồi thử lại. Gói free giới hạn số lượt mỗi phút và mỗi ngày.")
 
+        if ma in (500, 503):
+            return (f"Model '{self.st.model}' đang quá tải.\n\n"
+                    f"Đây là lỗi phía Google, không phải lỗi của bạn.\n"
+                    f"Chờ vài phút rồi bấm Viết lại, hoặc đổi tạm sang model khác "
+                    f"trong file .env.")
+
         return f"Google báo lỗi {ma}: {chi_tiet}"
+
+    @staticmethod
+    def _tim_model_thay_the(thong_diep: str) -> str:
+        """
+        Bóc tên model thay thế ra khỏi câu tiếng Anh Google trả về.
+        Trả về chuỗi rỗng nếu không tìm thấy.
+        """
+        khop = re.search(r"use\s+models/([a-zA-Z0-9._-]+)", thong_diep)
+        return khop.group(1) if khop else ""
 
     def liet_ke_model(self) -> List[str]:
         """Hỏi Google xem tài khoản này dùng được những model nào."""
