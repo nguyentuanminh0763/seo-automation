@@ -23,7 +23,7 @@ CHO_CHEN_TU_KHOA = "{keyword}"
 NHA_CUNG_CAP_MAC_DINH = "gemini"
 GEMINI_MODEL_MAC_DINH = "gemini-3.6-flash"
 CLAUDE_MODEL_MAC_DINH = "claude-opus-5"
-MAX_TOKENS_MAC_DINH = 8000
+MAX_TOKENS_MAC_DINH = 24000
 TIMEOUT_MAC_DINH = 180
 
 # =============================================================================
@@ -41,7 +41,54 @@ BANG_GIA = {
 TY_GIA_VND = 26000
 
 # =============================================================================
-# 4. ĐẦU RA
+# 4. CHUẨN KIỂM TRA SEO
+# =============================================================================
+# Tool tự ĐẾM những con số này bằng code, không hỏi AI.
+# Lý do: mô hình ngôn ngữ không đếm được. Đo thực tế trên một bài, AI tự khai
+# 3.682 từ / 17 lần từ khóa trong khi số thật là 5.876 từ / 26 lần — sai 50–60%
+# nhưng bảng trông rất thuyết phục. Sửa số ở đây nếu bạn đổi chuẩn.
+
+CHUAN_SEO = {
+    "so_tu_toi_thieu": 3500,
+    "so_tu_toi_da": 4200,
+    "so_h1": 1,
+    "so_h2_toi_thieu": 10,
+    "tu_khoa_min": 15,
+    "tu_khoa_max": 20,
+    "mat_do_min": 0.40,          # phần trăm
+    "mat_do_max": 0.55,
+    "h2_chua_tu_khoa_min": 4,
+    "title_toi_da": 60,          # ký tự
+    "meta_min": 140,
+    "meta_max": 158,
+    "internal_min": 5,
+    "internal_max": 8,
+    "external_min": 1,
+    "external_max": 2,
+    "so_anh_toi_thieu": 4,
+    "so_faq_toi_thieu": 5,
+}
+
+# Tên miền của bạn — dùng để phân biệt internal link với external link.
+TEN_MIEN = "giaphongpc.vn"
+
+# Dấu hiệu nhận biết các khối bắt buộc trong bài.
+DAU_HIEU = {
+    "tra_loi_nhanh": r"trả lời nhanh",
+    "faq": r"^#{2,3}\s*.*(FAQ|câu hỏi thường gặp)",
+    "checklist": r"checklist|tự kiểm tra",
+    "author_bio": r"đội ngũ|tác giả|author",
+    "ngay_cap_nhat": r"cập nhật",
+    "canh_bao_an_toan": r"an toàn|ngắt điện|rút nguồn|điện giật",
+    "gioi_han": r"tham khảo|không nên tự|khuyến cáo",
+    "anh": r"\[ẢNH",
+}
+
+# Số điện thoại / thông tin NAP cần có mặt. Sửa cho khớp doanh nghiệp của bạn.
+NAP_CAN_CO = ["0706.992.233"]
+
+# =============================================================================
+# 5. ĐẦU RA
 # =============================================================================
 OUTPUT_PREFIX = "baiviet"
 

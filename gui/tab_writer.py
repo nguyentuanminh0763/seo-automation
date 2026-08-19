@@ -122,6 +122,9 @@ class TabWriter(ttk.Frame):
         self.nut_copy_html = ttk.Button(hang_nut, text="Copy mã HTML",
                                         command=self._copy_ma_html, state="disabled")
         self.nut_copy_html.pack(side="left", padx=4)
+        self.nut_kiem_tra = ttk.Button(hang_nut, text="🔍  Kiểm tra SEO",
+                                       command=self._mo_bang_kiem_tra, state="disabled")
+        self.nut_kiem_tra.pack(side="left", padx=4)
 
         ttk.Label(phai, text="Tiến trình:", font=("Segoe UI", 9, "bold")).pack(anchor="w")
         self.hop_log = HopLog(phai)
@@ -236,15 +239,23 @@ class TabWriter(ttk.Frame):
             self.duong_dan_file = None
             self.hop_log.them_dong(30, f"Không lưu được file: {e}")
 
-        for nut in (self.nut_copy, self.nut_mo_trinh_duyet, self.nut_copy_html):
+        for nut in (self.nut_copy, self.nut_mo_trinh_duyet,
+                    self.nut_copy_html, self.nut_kiem_tra):
             nut.configure(state="normal")
 
-        canh_bao = ""
+        # Chạy kiểm tra ngay để người dùng thấy vấn đề trước khi kịp copy đi đăng.
+        bao_cao = self._chay_kiem_tra()
+
+        phan_them = ""
         if bai.so_cho_can_bo_sung:
-            canh_bao = f" · ⚠ {bai.so_cho_can_bo_sung} chỗ cần bạn điền số liệu thật"
+            phan_them += f" · {bai.so_cho_can_bo_sung} chỗ cần điền số liệu"
+        if bao_cao is not None:
+            phan_them += f" · {bao_cao.tom_tat()}"
+
+        co_van_de = bai.so_cho_can_bo_sung or (bao_cao and bao_cao.so_chua_dat)
         self._doi_trang_thai(
-            f"Xong. {bai.so_tu} từ · {bai.mo_ta_chi_phi}{canh_bao}",
-            "#c60" if bai.so_cho_can_bo_sung else "#0a7",
+            f"Xong. {bai.so_tu} từ · {bai.mo_ta_chi_phi}{phan_them}",
+            "#c60" if co_van_de else "#0a7",
         )
 
     def _hien_bai(self, bai: BaiViet) -> None:
@@ -268,8 +279,38 @@ class TabWriter(ttk.Frame):
         self.bai_hien_tai = None
         self.duong_dan_file = None
         self.o_bai.delete("1.0", "end")
-        for nut in (self.nut_copy, self.nut_mo_trinh_duyet, self.nut_copy_html):
+        for nut in (self.nut_copy, self.nut_mo_trinh_duyet,
+                    self.nut_copy_html, self.nut_kiem_tra):
             nut.configure(state="disabled")
+
+    # =========================================================================
+    # KIỂM TRA SEO
+    # =========================================================================
+
+    def _chay_kiem_tra(self):
+        """
+        Đếm lại trên nội dung ĐANG hiển thị, không phải bản AI trả về ban đầu —
+        người dùng sửa tay xong bấm kiểm tra lại phải ra số mới.
+        """
+        from writer import auditor
+
+        noi_dung = self._lay_ban_dang_sua()
+        if not noi_dung or self.bai_hien_tai is None:
+            return None
+        try:
+            return auditor.kiem_tra(noi_dung, self.bai_hien_tai.keyword)
+        except Exception as loi:  # noqa: BLE001 - kiểm tra hỏng không được chặn việc dùng bài
+            self.hop_log.them_dong(30, f"Không chạy được kiểm tra SEO: {loi}")
+            return None
+
+    def _mo_bang_kiem_tra(self) -> None:
+        from .audit_window import CuaSoKiemTra
+
+        bao_cao = self._chay_kiem_tra()
+        if bao_cao is None:
+            return
+        CuaSoKiemTra(self, bao_cao, self._lay_ban_dang_sua(),
+                     self.bai_hien_tai.keyword)
 
     # =========================================================================
     # COPY / MỞ
