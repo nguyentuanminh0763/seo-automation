@@ -89,9 +89,15 @@ class TabWriter(ttk.Frame):
         self.nut_viet = ttk.Button(trai, text="✎  Viết bài", command=self._bat_dau)
         self.nut_viet.pack(fill="x", pady=2)
 
-        self.nhan_ai = ttk.Label(trai, text="", foreground="#0a7",
-                                 font=("Segoe UI", 8), wraplength=250)
-        self.nhan_ai.pack(anchor="w", pady=(6, 0))
+        hang_ai = ttk.Frame(trai)
+        hang_ai.pack(fill="x", pady=(6, 0))
+        self.nhan_ai = ttk.Label(hang_ai, text="", foreground="#0a7",
+                                 font=("Segoe UI", 8), wraplength=190, justify="left")
+        self.nhan_ai.pack(side="left", fill="x", expand=True)
+        ttk.Button(hang_ai, text="⚙", width=3,
+                   command=self._mo_cau_hinh).pack(side="right")
+        ttk.Button(trai, text="Cấu hình AI · đổi key, đổi model",
+                   command=self._mo_cau_hinh).pack(fill="x", pady=(4, 0))
 
         # --- CỘT PHẢI: kết quả ---
         phai = ttk.Frame(self)
@@ -183,15 +189,14 @@ class TabWriter(ttk.Frame):
             messagebox.showwarning("Thiếu từ khóa", "Hãy nhập hoặc dán từ khóa cần viết.")
             return
 
-        if env_util.thieu_file_env(self.thu_muc_goc):
-            messagebox.showerror("Chưa cấu hình",
-                                 env_util.huong_dan_tao_env(self.thu_muc_goc))
-            return
-
         try:
             st = Settings.tu_env(self.thu_muc_goc)
         except ThieuCauHinh as loi:
-            messagebox.showerror("Chưa cấu hình", str(loi))
+            # Thiếu key thì mở thẳng màn hình cấu hình thay vì chỉ báo lỗi —
+            # người dùng đang muốn viết bài, đừng bắt họ tự đi tìm chỗ sửa.
+            if messagebox.askyesno("Chưa có API key",
+                                   f"{loi}\n\nMở màn hình Cấu hình AI ngay bây giờ?"):
+                self._mo_cau_hinh()
             return
 
         prompt = self._prompt_dang_chon()
@@ -379,6 +384,12 @@ class TabWriter(ttk.Frame):
                 "Đã mở trình duyệt. Bấm Ctrl+A rồi Ctrl+C, sang WordPress dán.", "#0a7")
         except OSError as e:
             messagebox.showerror("Không mở được", str(e))
+
+    def _mo_cau_hinh(self) -> None:
+        """Mở màn hình nhập API key, chọn nhà cung cấp và model."""
+        from .settings_window import CuaSoCauHinh
+
+        CuaSoCauHinh(self, self.thu_muc_goc, khi_luu=self._kiem_tra_cau_hinh)
 
     def _mo_thu_muc_prompt(self) -> None:
         from writer.config import THU_MUC_PROMPT

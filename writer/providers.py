@@ -404,10 +404,160 @@ class NhaCungCapClaude:
 
 # =============================================================================
 
+# =============================================================================
+# OPENAI
+# =============================================================================
+
+URL_OPENAI = "https://api.openai.com/v1"
+
+
+class NhaCungCapOpenAI:
+    """
+    Gọi OpenAI qua REST. Không cần cài thêm thư viện — dùng chung `requests`
+    với Gemini, giữ đúng nguyên tắc hạn chế thư viện ngoài của dự án.
+    """
+
+    def __init__(self, st: Settings):
+        self.st = st
+
+    def viet_bai(self, prompt: str, nen_dung=None) -> KetQua:
+        for lan_thu in range(1, SO_LAN_THU_LAI + 1):
+            if nen_dung is not None and nen_dung():
+                raise LoiGoiAI("Đã dừng theo yêu cầu.")
+
+            try:
+                phan_hoi = requests.post(
+                    f"{URL_OPENAI}/chat/completions",
+                    headers={"Authorization": f"Bearer {self.st.api_key}",
+                             "Content-Type": "application/json"},
+                    json=self._dung_than_yeu_cau(prompt),
+                    timeout=self.st.timeout,
+                )
+            except requests.Timeout:
+                raise LoiGoiAI(
+                    f"Quá {self.st.timeout} giây chưa thấy hồi âm.\n"
+                    f"Thử tăng TIMEOUT, hoặc kiểm tra mạng."
+                ) from None
+            except requests.RequestException as loi:
+                raise LoiGoiAI(f"Không kết nối được tới OpenAI: {loi}") from None
+
+            if phan_hoi.status_code == 200:
+                return self._doc_ket_qua(phan_hoi.json())
+
+            # Model đời mới không nhận max_tokens mà đòi max_completion_tokens,
+            # model cũ thì ngược lại. Không đoán được model nào thuộc loại nào,
+            # nên cứ thử lại một lần với tên tham số kia.
+            if self._sai_ten_tham_so(phan_hoi) and not self._da_doi_tham_so:
+                self._da_doi_tham_so = True
+                log.info("Model này dùng tên tham số khác — thử lại...")
+                continue
+
+            if phan_hoi.status_code not in (429, 500, 503) or lan_thu == SO_LAN_THU_LAI:
+                raise LoiGoiAI(self._giai_thich_loi(phan_hoi))
+
+            cho = GIAY_CHO_GIUA_CAC_LAN * lan_thu
+            log.warning("OpenAI đang bận (lỗi %d). Thử lại lần %d/%d sau %d giây...",
+                        phan_hoi.status_code, lan_thu + 1, SO_LAN_THU_LAI, cho)
+            time.sleep(cho)
+
+        raise LoiGoiAI("Không gọi được OpenAI sau nhiều lần thử.")
+
+    _da_doi_tham_so = False
+
+    def _dung_than_yeu_cau(self, prompt: str) -> dict:
+        ten_gioi_han = "max_tokens" if self._da_doi_tham_so else "max_completion_tokens"
+        return {
+            "model": self.st.model,
+            "messages": [{"role": "user", "content": prompt}],
+            ten_gioi_han: self.st.max_tokens,
+        }
+
+    @staticmethod
+    def _sai_ten_tham_so(phan_hoi) -> bool:
+        try:
+            tb = phan_hoi.json().get("error", {}).get("message", "")
+        except (ValueError, json.JSONDecodeError):
+            return False
+        return "max_completion_tokens" in tb or "max_tokens" in tb
+
+    def _doc_ket_qua(self, du_lieu: dict) -> KetQua:
+        cac_lua_chon = du_lieu.get("choices") or []
+        if not cac_lua_chon:
+            raise LoiGoiAI("OpenAI không trả về nội dung nào.")
+
+        lua_chon = cac_lua_chon[0]
+        noi_dung = (lua_chon.get("message") or {}).get("content") or ""
+        noi_dung = noi_dung.strip()
+
+        if not noi_dung:
+            ly_do = lua_chon.get("finish_reason", "không rõ")
+            if ly_do == "length":
+                raise LoiGoiAI("Bài bị cắt vì chạm giới hạn độ dài.\n"
+                               "Tăng MAX_TOKENS trong màn hình Cấu hình AI.")
+            raise LoiGoiAI(f"OpenAI trả về rỗng (lý do: {ly_do}).")
+
+        dung = du_lieu.get("usage") or {}
+        return KetQua(
+            noi_dung=noi_dung,
+            model=du_lieu.get("model", self.st.model),
+            token_vao=dung.get("prompt_tokens", 0),
+            token_ra=dung.get("completion_tokens", 0),
+        )
+
+    def _giai_thich_loi(self, phan_hoi) -> str:
+        ma = phan_hoi.status_code
+        try:
+            loi = phan_hoi.json().get("error", {})
+            chi_tiet = loi.get("message", "")
+        except (ValueError, json.JSONDecodeError):
+            chi_tiet = phan_hoi.text[:200]
+
+        if ma == 401:
+            return ("API key OpenAI không hợp lệ.\n"
+                    "Kiểm tra lại trong màn hình Cấu hình AI.\n"
+                    "Lấy key tại https://platform.openai.com/api-keys")
+        if ma == 403:
+            return (f"Tài khoản không có quyền dùng model '{self.st.model}'.\n"
+                    f"Chọn model khác trong màn hình Cấu hình AI.")
+        if ma == 404:
+            ds = self.liet_ke_model()
+            goi_y = "\n".join(f"    {m}" for m in ds[:12]) if ds else "    (không lấy được danh sách)"
+            return (f"Không tìm thấy model '{self.st.model}'.\n\n"
+                    f"Các model tài khoản bạn dùng được:\n{goi_y}")
+        if ma == 429:
+            if "insufficient_quota" in chi_tiet or "quota" in chi_tiet.lower():
+                return ("Tài khoản OpenAI đã hết số dư.\n"
+                        "Nạp thêm tại https://platform.openai.com/settings/organization/billing")
+            return "Chạm giới hạn tốc độ của OpenAI. Chờ một lát rồi thử lại."
+        return f"OpenAI báo lỗi {ma}: {chi_tiet}"
+
+    def liet_ke_model(self) -> List[str]:
+        """Hỏi OpenAI xem tài khoản này dùng được model nào để sinh văn bản."""
+        try:
+            phan_hoi = requests.get(
+                f"{URL_OPENAI}/models",
+                headers={"Authorization": f"Bearer {self.st.api_key}"},
+                timeout=30,
+            )
+            if phan_hoi.status_code != 200:
+                return []
+            ten = [m.get("id", "") for m in phan_hoi.json().get("data", [])]
+            # Bỏ model không dùng để viết văn bản cho danh sách gọn lại.
+            bo = ("whisper", "tts", "dall-e", "embedding", "moderation",
+                  "audio", "image", "realtime", "transcribe")
+            return sorted(t for t in ten if t and not any(b in t for b in bo))
+        except Exception:  # noqa: BLE001 - chỉ là tiện ích phụ
+            return []
+
+
+# =============================================================================
+
 def tao_nha_cung_cap(st: Settings):
-    """Chọn lớp gọi API theo cấu hình NHA_CUNG_CAP trong .env."""
+    """Chọn lớp gọi API theo cấu hình NHA_CUNG_CAP."""
     if st.nha_cung_cap == "gemini":
         return NhaCungCapGemini(st)
     if st.nha_cung_cap == "claude":
         return NhaCungCapClaude(st)
+    if st.nha_cung_cap == "openai":
+        return NhaCungCapOpenAI(st)
     raise LoiGoiAI(f"Không hỗ trợ nhà cung cấp '{st.nha_cung_cap}'.")

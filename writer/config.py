@@ -35,6 +35,7 @@ MODEL_DU_PHONG = [
     "gemini-3.1-flash-lite",
 ]
 CLAUDE_MODEL_MAC_DINH = "claude-opus-5"
+OPENAI_MODEL_MAC_DINH = "gpt-5"
 MAX_TOKENS_MAC_DINH = 24000
 TIMEOUT_MAC_DINH = 420
 
@@ -47,6 +48,34 @@ BANG_GIA = {
     "claude-opus-5": {"vao": 5.0, "ra": 25.0},
     "claude-sonnet-5": {"vao": 3.0, "ra": 15.0},
     "claude-haiku-4-5": {"vao": 1.0, "ra": 5.0},
+}
+
+# Ba nhà cung cấp được hỗ trợ. Tên hiển thị dùng cho ô chọn trên giao diện.
+NHA_CUNG_CAP = {
+    "gemini": {
+        "ten": "Google Gemini",
+        "ghi_chu": "Có gói miễn phí ~20 lượt/ngày mỗi model, không cần thẻ",
+        "khoa_env": "GEMINI_API_KEY",
+        "model_env": "GEMINI_MODEL",
+        "lay_key": "https://aistudio.google.com/apikey",
+        "dang_key": "AIza...",
+    },
+    "openai": {
+        "ten": "OpenAI",
+        "ghi_chu": "Trả phí theo lượng dùng, cần nạp số dư trước",
+        "khoa_env": "OPENAI_API_KEY",
+        "model_env": "OPENAI_MODEL",
+        "lay_key": "https://platform.openai.com/api-keys",
+        "dang_key": "sk-...",
+    },
+    "claude": {
+        "ten": "Anthropic Claude",
+        "ghi_chu": "Trả phí, văn phong tự nhiên nhất",
+        "khoa_env": "ANTHROPIC_API_KEY",
+        "model_env": "CLAUDE_MODEL",
+        "lay_key": "https://console.anthropic.com",
+        "dang_key": "sk-ant-...",
+    },
 }
 
 # Tỷ giá quy đổi để hiển thị cho dễ hình dung. Chỉ là ước tính.

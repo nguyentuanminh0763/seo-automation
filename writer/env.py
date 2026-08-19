@@ -48,6 +48,58 @@ def _bo_dau_nhay(gia_tri: str) -> str:
     return gia_tri
 
 
+def ghi_env(thu_muc_goc: str, cap_nhat: Dict[str, str]) -> None:
+    """
+    Cập nhật các khóa trong .env, GIỮ NGUYÊN chú thích và thứ tự dòng.
+
+    Viết đè cả file sẽ xóa sạch phần hướng dẫn mà người dùng cần đọc lại sau
+    này, nên hàm này chỉ thay đúng phần giá trị của những dòng cần sửa.
+    Khóa chưa có trong file thì thêm vào cuối.
+    """
+    duong_dan = os.path.join(thu_muc_goc, TEN_FILE)
+    con_lai = dict(cap_nhat)
+    cac_dong = []
+
+    if os.path.exists(duong_dan):
+        with open(duong_dan, "r", encoding="utf-8") as f:
+            cac_dong = f.read().splitlines()
+
+    for i, dong in enumerate(cac_dong):
+        tach = dong.strip()
+        if not tach or tach.startswith("#") or "=" not in tach:
+            continue
+        khoa = tach.split("=", 1)[0].strip()
+        if khoa in con_lai:
+            cac_dong[i] = f"{khoa}={con_lai.pop(khoa)}"
+
+    if con_lai:
+        cac_dong.append("")
+        cac_dong.append("# --- Thêm tự động từ màn hình Cấu hình AI ---")
+        cac_dong += [f"{k}={v}" for k, v in con_lai.items()]
+
+    # Ghi ra file tạm rồi mới thay thế: nếu máy tắt giữa chừng, file .env cũ
+    # vẫn nguyên vẹn thay vì mất sạch API key.
+    tam = duong_dan + ".tmp"
+    with open(tam, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(cac_dong).rstrip() + "\n")
+    os.replace(tam, duong_dan)
+
+
+def tao_env_tu_mau(thu_muc_goc: str) -> bool:
+    """Chưa có .env thì tạo từ .env.example. Trả về True nếu vừa tạo."""
+    dich = os.path.join(thu_muc_goc, TEN_FILE)
+    if os.path.exists(dich):
+        return False
+    nguon = os.path.join(thu_muc_goc, TEN_FILE_MAU)
+    noi_dung = ""
+    if os.path.exists(nguon):
+        with open(nguon, "r", encoding="utf-8") as f:
+            noi_dung = f.read()
+    with open(dich, "w", encoding="utf-8", newline="\n") as f:
+        f.write(noi_dung)
+    return True
+
+
 def thieu_file_env(thu_muc_goc: str) -> bool:
     """Kiểm tra người dùng đã tạo file .env chưa."""
     return not os.path.exists(os.path.join(thu_muc_goc, TEN_FILE))

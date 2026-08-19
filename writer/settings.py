@@ -46,6 +46,11 @@ class Settings:
             model = lay("GEMINI_MODEL", config.GEMINI_MODEL_MAC_DINH)
             ten_khoa = "GEMINI_API_KEY"
             noi_lay = "https://aistudio.google.com (miễn phí)"
+        elif nha_cung_cap == "openai":
+            api_key = lay("OPENAI_API_KEY")
+            model = lay("OPENAI_MODEL", config.OPENAI_MODEL_MAC_DINH)
+            ten_khoa = "OPENAI_API_KEY"
+            noi_lay = "https://platform.openai.com/api-keys (trả phí)"
         elif nha_cung_cap == "claude":
             api_key = lay("ANTHROPIC_API_KEY")
             model = lay("CLAUDE_MODEL", config.CLAUDE_MODEL_MAC_DINH)
@@ -54,7 +59,7 @@ class Settings:
         else:
             raise ThieuCauHinh(
                 f"NHA_CUNG_CAP trong file .env đang là '{nha_cung_cap}'.\n"
-                f"Chỉ nhận 'gemini' hoặc 'claude'."
+                f"Chỉ nhận 'gemini', 'openai' hoặc 'claude'."
             )
 
         if not api_key:
@@ -77,8 +82,8 @@ class Settings:
 
     def mo_ta(self) -> str:
         """Chuỗi ngắn hiện trên giao diện cho biết đang dùng AI nào."""
-        ten = "Gemini (miễn phí)" if self.nha_cung_cap == "gemini" else "Claude (trả phí)"
-        return f"{ten} · {self.model}"
+        thong_tin = config.NHA_CUNG_CAP.get(self.nha_cung_cap, {})
+        return f"{thong_tin.get('ten', self.nha_cung_cap)} · {self.model}"
 
     def bang_gia(self) -> Optional[dict]:
         """Lấy đơn giá của model hiện tại, None nếu không có trong bảng."""
