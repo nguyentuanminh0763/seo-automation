@@ -54,6 +54,37 @@ khớp luật nào. Cần bổ sung luật phân loại chi tiết hơn trong `s
 
 ---
 
+## Công cụ 3 — Tab "Viết bài" (Gemini / Claude)
+
+| Ngày giờ | Từ khóa | Model | Số từ | Thời gian | Chi phí |
+|---|---|---|---:|---:|---|
+| 2026-08-19 17:43 | cách khắc phục loa máy tính bàn không nghe được | gemini-3.6-flash | 1.455 | ~55 giây | miễn phí |
+| 2026-08-19 17:30 | cách kiểm tra ram máy tính có bị lỗi không | gemini-3.6-flash | 1.498 | 55 giây | miễn phí |
+
+### Ghi chú quan trọng về model Gemini
+
+| Model | Trạng thái |
+|---|---|
+| `gemini-2.5-flash` | ❌ Không còn mở cho người dùng mới (Google trả 404) |
+| `gemini-3.6-flash` | ✅ **Đang dùng** — Google đề xuất thay thế cho 2.5 |
+| `gemini-3.7-flash` | ⚠️ Có tồn tại nhưng hay quá tải (503) |
+
+⚠️ Danh sách model từ `ListModels` **không đáng tin hoàn toàn** — `gemini-2.5-flash` vẫn nằm
+trong danh sách nhưng gọi thì báo 404. Luôn tin thông điệp lỗi trực tiếp của Google hơn.
+
+⚠️ Gói miễn phí hay trả **503 "high demand"**. Công cụ đã tự thử lại 3 lần (8s → 16s → 24s).
+Nếu vẫn hỏng thì chờ vài phút, không phải lỗi cấu hình.
+
+### So sánh chi phí nếu chuyển sang Claude
+
+| Model | Chi phí/bài | 100 bài/tháng |
+|---|---:|---:|
+| Gemini (gói free) | 0đ | **0đ** |
+| Claude Opus 5 | ~2.800đ | ~280.000đ |
+| Claude Sonnet 5 | ~1.700đ | ~170.000đ |
+
+---
+
 ## Chỉ số cần theo dõi về sau
 
 Những số này chỉ đo được sau khi đã đăng bài, cần Google Search Console:

@@ -29,7 +29,31 @@ Chi tiết từng lần chạy: [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md)
 
 ---
 
-## Cập nhật mới nhất — Giao diện đồ họa (2026-08-19)
+## Cập nhật mới nhất — Công cụ viết bài bằng AI (2026-08-19)
+
+Thêm tab thứ ba: dán từ khóa → AI viết bài → copy dán thẳng vào WordPress.
+
+**File đã tạo:** package `writer/` (9 file), `gui/tab_writer.py`, `.env.example`, `prompts/giaphongpc.md`
+
+**Ba quyết định thiết kế:**
+- **Đổi nhà cung cấp AI bằng một dòng trong `.env`** — bắt đầu bằng Gemini miễn phí không cần
+  thẻ tín dụng, chuyển sang Claude sau này không phải sửa code. Thư viện `anthropic` chỉ nạp
+  khi thực sự dùng nên người xài Gemini không cần cài.
+- **Prompt là của người dùng** — `writer/` chỉ thay `{keyword}` và nối ghi chú vào cuối,
+  không hiểu và không sửa nội dung prompt. Thả file `.md` vào `prompts/` là giao diện tự thấy.
+- **Clipboard giữ định dạng** — gọi Windows API qua ctypes ghi định dạng "HTML Format",
+  để Ctrl+V vào WordPress ăn đúng thẻ H2 như khi copy từ ChatGPT.
+
+**Kiểm chứng:** chạy thật trên gói Gemini miễn phí — bài 1.498 từ trong 55 giây, HTML sạch
+(1 H1, 6 H2, 7 H3, 21 đoạn, 14 danh sách), 3 chỗ `[CẦN BỔ SUNG]` cho người dùng điền số liệu thật.
+
+**Bốn lỗi đã phát hiện khi chạy thật** — chi tiết trong [`report/report-19-8-2026.md`](report/report-19-8-2026.md):
+hộp thoại lỗi cắt còn 1 dòng; vứt bỏ thông điệp Google chỉ tên model thay thế;
+`gemini-2.5-flash` ngừng mở cho người dùng mới; gói free hay trả 503 mà chưa có retry.
+
+---
+
+## Cập nhật trước đó — Giao diện đồ họa (2026-08-19)
 
 Thêm ứng dụng cửa sổ Windows để dùng cả hai công cụ mà không cần gõ lệnh hay sửa `config.py`.
 
