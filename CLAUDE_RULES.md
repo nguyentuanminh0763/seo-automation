@@ -51,7 +51,20 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 pytrends 4.9.2 gọi `urllib3.Retry(method_whitelist=...)` — tham số này đã bị urllib3 2.x xóa,
 gây `TypeError` làm hỏng toàn bộ truy vấn. Vòng retry tự viết ở `trends/fetcher.py` đã thay thế.
 
-### 4. Git phải dùng remote HTTPS
+### 4. Tkinter: luồng nền KHÔNG được đụng vào giao diện
+
+Luồng nền tuyệt đối không gọi bất cứ hàm nào của tkinter, **kể cả `widget.after()`**.
+Bản đầu tiên của giao diện làm vậy và sập ngay khi test:
+
+```
+RuntimeError: main thread is not in main loop
+```
+
+Cách đúng đã áp dụng: luồng nền chỉ cất kết quả vào chính nó (`gui/worker.py`),
+luồng chính định kỳ 120ms kiểm tra xem xong chưa (`gui/tab_base.py`).
+Log cũng đi qua hàng đợi chứ không ghi thẳng lên giao diện.
+
+### 5. Git phải dùng remote HTTPS
 
 Khóa SSH trên máy thuộc tài khoản `khuongngocdoan`, không có quyền ghi vào repo của
 `nguyentuanminh0763`. Push qua SSH luôn bị từ chối. Luôn dùng:

@@ -29,7 +29,43 @@ Chi tiết từng lần chạy: [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md)
 
 ---
 
-## Cập nhật mới nhất — Khởi tạo dự án (2026-08-19)
+## Cập nhật mới nhất — Giao diện đồ họa (2026-08-19)
+
+Thêm ứng dụng cửa sổ Windows để dùng cả hai công cụ mà không cần gõ lệnh hay sửa `config.py`.
+
+**File đã tạo:** package `gui/` (8 file), `seo_gui.pyw`, `Chay_giao_dien.bat`
+
+**Đã làm:**
+- Cửa sổ 2 tab, dùng tkinter có sẵn trong Python — **không cần cài thêm thư viện nào**
+- Nhập từ khóa trực tiếp vào ô, mỗi dòng một từ
+- Ô hiển thị tiến trình theo thời gian thực, tô màu cảnh báo và lỗi
+- Bảng kết quả có ô lọc nhanh trên mọi cột
+- Nút Dừng giữa chừng, **giữ lại toàn bộ kết quả đã thu được**
+- Tab Suggest hiện ước tính số lượt hỏi và thời gian dự kiến, cập nhật theo tùy chọn
+- File `.bat` bấm đúp để chạy, có thông báo rõ ràng nếu không tìm thấy Python
+
+**Thay đổi ở code cũ:** thêm tham số tùy chọn `nen_dung=None` vào `quet_breakout()` và
+`thu_thap()` để hỗ trợ dừng giữa chừng. Mặc định `None` nên dòng lệnh cũ **không bị ảnh hưởng**
+(đã chạy lại để xác nhận).
+
+**Một lỗi thiết kế thật đã phát hiện khi test:**
+
+Bản đầu tiên cho luồng nền gọi `widget.after()` để báo kết quả về giao diện. Test sập ngay:
+
+```
+RuntimeError: main thread is not in main loop
+```
+
+Tkinter không cho phép luồng nền đụng vào giao diện, kể cả qua `after()`. Đã sửa: luồng nền
+chỉ cất kết quả vào chính nó, luồng chính định kỳ 120ms kiểm tra xem xong chưa. Nguyên tắc
+này đã ghi vào `gui/worker.py` để không ai lặp lại.
+
+**Kiểm chứng:** chạy thật qua giao diện ra 8 dòng và xuất file thành công; bấm Dừng giữa
+chừng dừng sau 1,5 giây và giữ nguyên 88 keyword đã thu; nút Chạy bật lại đúng trạng thái.
+
+---
+
+## Cập nhật trước đó — Khởi tạo dự án (2026-08-19)
 
 Dựng từ số 0 hai công cụ thu thập từ khóa SEO, tách module, chạy kiểm chứng thật và đưa lên GitHub.
 

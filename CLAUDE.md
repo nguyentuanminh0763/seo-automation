@@ -15,7 +15,8 @@ Dự án: **SEO Automation cho giaphongpc.vn** — hai công cụ Python thu th�
 - Python **không nằm trong PATH**: `C:\Users\PC\AppData\Local\Programs\Python\Python312\python.exe`
 - Git phải dùng remote **HTTPS** (khóa SSH trên máy thuộc tài khoản khác, không có quyền ghi).
 - Thư mục `output/` **không bao giờ commit** — repo public, đó là dữ liệu kinh doanh.
-- **Không báo "đã xong" khi chưa chạy thật.** Dự án này đã có 3 lỗi chỉ lộ ra khi chạy.
+- **Không báo "đã xong" khi chưa chạy thật.** Dự án này đã có 4 lỗi chỉ lộ ra khi chạy.
+- Giao diện: luồng nền **không được** gọi hàm tkinter nào, kể cả `after()`.
 
 ## Sau khi thay đổi
 

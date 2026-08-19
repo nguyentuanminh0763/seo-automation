@@ -18,6 +18,21 @@
 
 ---
 
+## Giai đoạn 1b — Giao diện đồ họa ✅ HOÀN THÀNH (2026-08-19)
+
+> **Ghi chú:** mục "giao diện web" từng nằm ở phần *đã quyết định không làm* bên dưới.
+> Người dùng yêu cầu lại nên đã triển khai, nhưng chọn **ứng dụng Windows (tkinter)**
+> thay vì web — không cần cài thêm thư viện, bấm đúp là chạy.
+
+- [x] Cửa sổ 2 tab cho cả hai công cụ — *2026-08-19*
+- [x] Nhập từ khóa trực tiếp, không cần sửa file `config.py` — *2026-08-19*
+- [x] Hiển thị tiến trình chạy theo thời gian thực — *2026-08-19*
+- [x] Bảng kết quả có ô lọc nhanh — *2026-08-19*
+- [x] Nút Dừng giữa chừng, giữ lại kết quả đã thu — *2026-08-19*
+- [x] File `.bat` bấm đúp để chạy, không cần gõ lệnh — *2026-08-19*
+
+---
+
 ## Giai đoạn 2 — Làm sạch và nâng chất lượng dữ liệu 🔜 TIẾP THEO
 
 Ưu tiên cao, làm được ngay, không cần công cụ mới.
@@ -62,7 +77,7 @@ Chưa cam kết. Cân nhắc khi giai đoạn 2 và 3 đã ổn.
 | Việc | Lý do bỏ |
 |---|---|
 | Chuyển sang database (SQLite/Postgres) | Người dùng làm SEO, không phải lập trình viên. Excel là định dạng họ dùng hàng ngày |
-| Giao diện web | Quá mức cần thiết cho công cụ chạy hàng tuần. Dòng lệnh là đủ |
+| ~~Giao diện web~~ | ĐÃ ĐẢO QUYẾT ĐỊNH 2026-08-19: người dùng yêu cầu giao diện. Đã làm bằng tkinter (ứng dụng Windows) thay vì web, để không phải cài thêm thư viện |
 | Dùng API trả phí (Ahrefs, Semrush) | Chi phí cao. Nguồn miễn phí đã cho 7.045 keyword, đủ dùng nhiều năm |
 | Gộp hai công cụ làm một | Chúng trả lời hai câu hỏi khác nhau, tần suất chạy khác nhau. Tách riêng dễ hiểu hơn |
 | Dùng lớp retry sẵn của pytrends | Không tương thích urllib3 2.x. Retry tự viết kiểm soát tốt hơn |

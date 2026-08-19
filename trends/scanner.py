@@ -40,9 +40,16 @@ def lam_sach_seed(danh_sach: List[str]) -> List[str]:
     return ket_qua
 
 
-def quet_breakout(seed_keywords: List[str], st: Settings) -> pd.DataFrame:
+def quet_breakout(seed_keywords: List[str],
+                  st: Settings,
+                  nen_dung=None) -> pd.DataFrame:
     """
     Duyệt toàn bộ từ khóa hạt giống theo từng nhóm, gom kết quả về một DataFrame.
+
+    Tham số:
+        nen_dung : hàm không tham số trả về True khi người dùng bấm Dừng.
+                   Dùng cho giao diện đồ họa. Để None khi chạy dòng lệnh.
+                   Được kiểm tra giữa các nhóm, nên có thể mất vài giây mới dừng hẳn.
 
     Trả về DataFrame rỗng nếu không tìm thấy gì (không ném lỗi).
     """
@@ -62,6 +69,11 @@ def quet_breakout(seed_keywords: List[str], st: Settings) -> pd.DataFrame:
     nhom_that_bai: List[List[str]] = []
 
     for thu_tu, nhom in enumerate(cac_nhom, start=1):
+        # Người dùng bấm Dừng trên giao diện -> thoát sớm nhưng VẪN GIỮ kết quả đã thu.
+        if nen_dung is not None and nen_dung():
+            log.warning("Đã dừng theo yêu cầu. Giữ lại %d kết quả thu được.", len(tat_ca_dong))
+            break
+
         log.info("--- [Nhóm %d/%d] %s", thu_tu, len(cac_nhom), nhom)
 
         du_lieu = fetcher.lay_related_queries(nhom)

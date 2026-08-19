@@ -19,6 +19,32 @@ python -m pip install -r requirements.txt
 
 ---
 
+## Giao diện đồ họa
+
+Ứng dụng cửa sổ Windows dùng cả hai công cụ mà không cần gõ lệnh. Viết bằng `tkinter`
+có sẵn trong Python nên **không cần cài thêm thư viện nào**.
+
+```bash
+python seo_gui.pyw
+```
+
+Trên Windows có thể bấm đúp `Chay_giao_dien.bat`.
+
+Tính năng:
+
+- Hai tab, mỗi tab một công cụ
+- Nhập từ khóa trực tiếp, không phải sửa `config.py`
+- Xem tiến trình chạy theo thời gian thực
+- Bảng kết quả có ô lọc nhanh
+- **Nút Dừng giữa chừng, giữ lại toàn bộ kết quả đã thu được**
+- Mở thẳng file Excel hoặc thư mục kết quả
+
+> Lưu ý cho người phát triển: luồng nền không được gọi bất kỳ hàm tkinter nào,
+> kể cả `widget.after()` — sẽ gây `RuntimeError: main thread is not in main loop`.
+> Kết quả được luồng chính thu về qua vòng lặp kiểm tra định kỳ.
+
+---
+
 ## 1. `trends_scrapper.py` — Bắt từ khóa đột biến
 
 Dùng Google Trends tìm các truy vấn có mức tăng trưởng **Breakout** (trên 5.000%) trong 30 ngày qua.
@@ -115,15 +141,25 @@ Mỗi file làm đúng một việc, chú thích đầy đủ bằng tiếng Vi�
 │   └── exporter.py         Xuất Excel/CSV
 │
 ├── suggest_scrapper.py     Điểm chạy — chỉ chứa CLI
-└── suggest/
-    ├── config.py           ★ Hằng số cấu hình — file cần sửa
-    ├── settings.py         Gói cấu hình + tham số dòng lệnh
-    ├── logger.py           Log, ép UTF-8 cho console Windows
-    ├── expander.py         Sinh biến thể truy vấn từ từ khóa gốc
-    ├── client.py           Gọi Google Suggest + retry
-    ├── classifier.py       Phân loại ý định tìm kiếm
-    ├── collector.py        Điều phối toàn bộ quy trình
-    └── exporter.py         Xuất Excel nhiều sheet
+├── suggest/
+│   ├── config.py           ★ Hằng số cấu hình — file cần sửa
+│   ├── settings.py         Gói cấu hình + tham số dòng lệnh
+│   ├── logger.py           Log, ép UTF-8 cho console Windows
+│   ├── expander.py         Sinh biến thể truy vấn từ từ khóa gốc
+│   ├── client.py           Gọi Google Suggest + retry
+│   ├── classifier.py       Phân loại ý định tìm kiếm
+│   ├── collector.py        Điều phối toàn bộ quy trình
+│   └── exporter.py         Xuất Excel nhiều sheet
+│
+├── seo_gui.pyw             Điểm chạy giao diện
+└── gui/                    Giao diện tkinter — KHÔNG chứa logic thu thập,
+    ├── app.py              chỉ gọi lại các hàm trong trends/ và suggest/
+    ├── tab_base.py         Khung chung cho hai tab (nhập, chạy, log, kết quả)
+    ├── tab_trends.py       Tab Google Trends — chỉ khai báo tùy chọn riêng
+    ├── tab_suggest.py      Tab Google Suggest — chỉ khai báo tùy chọn riêng
+    ├── widgets.py          Ô log, bảng có lọc, ô nhập từ khóa
+    ├── worker.py           Luồng nền, cờ dừng
+    └── log_bridge.py       Đưa log lên giao diện an toàn qua hàng đợi
 ```
 
 Kết quả chạy nằm trong `output/` và **không được đưa lên repo** (xem `.gitignore`).

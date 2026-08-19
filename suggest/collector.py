@@ -17,9 +17,15 @@ from .settings import Settings
 log = lay_log()
 
 
-def thu_thap(seed_keywords: List[str], st: Settings) -> pd.DataFrame:
+def thu_thap(seed_keywords: List[str],
+             st: Settings,
+             nen_dung=None) -> pd.DataFrame:
     """
     Chạy toàn bộ quy trình thu thập cho danh sách từ khóa gốc.
+
+    Tham số:
+        nen_dung : hàm không tham số trả về True khi người dùng bấm Dừng.
+                   Dùng cho giao diện đồ họa. Để None khi chạy dòng lệnh.
 
     Trả về DataFrame rỗng nếu không thu được gì (không ném lỗi).
     """
@@ -43,7 +49,12 @@ def thu_thap(seed_keywords: List[str], st: Settings) -> pd.DataFrame:
     kho_keyword: Dict[str, Dict] = {}
 
     for thu_tu, seed in enumerate(seed_keywords, start=1):
-        so_moi = _thu_thap_mot_seed(seed, client, st, kho_keyword, thoi_diem)
+        # Người dùng bấm Dừng trên giao diện -> thoát sớm nhưng VẪN GIỮ kết quả đã thu.
+        if nen_dung is not None and nen_dung():
+            log.warning("Đã dừng theo yêu cầu. Giữ lại %d keyword thu được.", len(kho_keyword))
+            break
+
+        so_moi = _thu_thap_mot_seed(seed, client, st, kho_keyword, thoi_diem, nen_dung)
         log.info("[%2d/%2d] %-22s -> +%d keyword mới (tổng %d)",
                  thu_tu, len(seed_keywords), seed, so_moi, len(kho_keyword))
 
@@ -54,11 +65,16 @@ def _thu_thap_mot_seed(seed: str,
                        client: SuggestClient,
                        st: Settings,
                        kho_keyword: Dict[str, Dict],
-                       thoi_diem: str) -> int:
+                       thoi_diem: str,
+                       nen_dung=None) -> int:
     """Xử lý một từ khóa gốc. Trả về số keyword MỚI thu được."""
     so_moi = 0
 
     for truy_van in sinh_bien_the(seed, st):
+        # Kiểm tra ở đây nữa vì mỗi seed mất ~30 giây, chờ hết seed mới dừng là quá lâu.
+        if nen_dung is not None and nen_dung():
+            break
+
         goi_y = client.lay_goi_y(truy_van)
         nghi_ngan(st)
 

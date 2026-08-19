@@ -41,6 +41,11 @@ seo/
 ├── suggest/                      Logic công cụ 2 (9 file, mỗi file 1 việc)
 │   └── config.py                 ★ File người dùng sửa
 │
+├── Chay_giao_dien.bat            ★ Bấm đúp để mở giao diện
+├── seo_gui.pyw                   Điểm chạy giao diện
+├── gui/                          Giao diện tkinter (8 file)
+│                                 KHÔNG chứa logic thu thập, chỉ gọi lại trends/ và suggest/
+│
 ├── docs/
 │   ├── BUSINESS_OVERVIEW.md      Bối cảnh giaphongpc.vn
 │   ├── RESULTS_LOG.md            ★ Nhật ký kết quả từng lần chạy
@@ -116,7 +121,7 @@ Nói rõ sửa gì, file nào, rủi ro ra sao. Chờ xác nhận nếu rủi ro
 Không viết lại lớn. Từng bước một
 
 **5. CHẠY THẬT ĐỂ KIỂM CHỨNG**
-> Đây là bước quan trọng nhất. Dự án này đã có 3 lỗi chỉ lộ ra khi chạy thật,
+> Đây là bước quan trọng nhất. Dự án này đã có 4 lỗi chỉ lộ ra khi chạy thật,
 > không lỗi nào phát hiện được bằng cách đọc code.
 > **Không bao giờ báo "đã xong" khi chưa chạy.**
 
@@ -126,9 +131,11 @@ ghi số liệu vào `docs/RESULTS_LOG.md` nếu có chạy công cụ
 
 ---
 
-## Lệnh hay dùng
+## Cách chạy
 
-Python không nằm trong PATH, phải gọi đường dẫn đầy đủ:
+**Cách dễ nhất — giao diện:** bấm đúp `Chay_giao_dien.bat`
+
+**Bằng dòng lệnh:** Python không nằm trong PATH, phải gọi đường dẫn đầy đủ:
 
 ```bash
 "C:\Users\PC\AppData\Local\Programs\Python\Python312\python.exe" trends_scrapper.py
@@ -152,10 +159,11 @@ git add -A && git commit -m "Mô tả thay đổi" && git push
 
 ---
 
-## Ba bẫy đã gặp thật — đừng vấp lại
+## Bốn bẫy đã gặp thật — đừng vấp lại
 
 1. **`pytrends` × `urllib3` 2.x** — không truyền `retries=` vào `TrendReq()`, sẽ vỡ toàn bộ truy vấn
 2. **Console Windows cp1252** — phải ép stdout sang UTF-8, không thì log tiếng Việt vỡ hết
-3. **Push git qua SSH** — khóa SSH trên máy thuộc tài khoản khác, luôn dùng remote HTTPS
+3. **Tkinter đa luồng** — luồng nền không được gọi hàm tkinter nào, kể cả `after()`
+4. **Push git qua SSH** — khóa SSH trên máy thuộc tài khoản khác, luôn dùng remote HTTPS
 
 Chi tiết trong `CLAUDE_RULES.md`.
