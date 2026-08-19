@@ -3,14 +3,16 @@
 Cửa sổ chính của ứng dụng.
 """
 
+import os
 import tkinter as tk
 from tkinter import messagebox, ttk
 
 from .tab_suggest import TabSuggest
 from .tab_trends import TabTrends
+from .tab_writer import TabWriter
 
-TIEU_DE = "SEO Keyword Tools — giaphongpc.vn"
-KICH_THUOC_MAC_DINH = "1180x760"
+TIEU_DE = "SEO Tools — giaphongpc.vn"
+KICH_THUOC_MAC_DINH = "1180x780"
 KICH_THUOC_TOI_THIEU = (960, 640)
 
 
@@ -42,17 +44,23 @@ class UngDung(tk.Tk):
         so_tay = ttk.Notebook(self)
         so_tay.pack(fill="both", expand=True, padx=8, pady=8)
 
+        # Thư mục gốc dự án — nơi chứa .env, prompts/ và output/
+        thu_muc_goc = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
         self.tab_suggest = TabSuggest(so_tay)
         self.tab_trends = TabTrends(so_tay)
+        self.tab_writer = TabWriter(so_tay, thu_muc_goc)
 
-        # Suggest đặt trước vì đây là công cụ dùng thường xuyên hơn.
-        so_tay.add(self.tab_suggest, text="  Từ khóa làm nội dung  ")
-        so_tay.add(self.tab_trends, text="  Từ khóa đột biến  ")
+        # Sắp theo đúng thứ tự công việc thực tế:
+        # lấy từ khóa -> bắt trend -> viết bài
+        so_tay.add(self.tab_suggest, text="  1. Từ khóa làm nội dung  ")
+        so_tay.add(self.tab_trends, text="  2. Từ khóa đột biến  ")
+        so_tay.add(self.tab_writer, text="  3. Viết bài  ")
 
     def _dang_chay(self) -> bool:
         return any(
             tab.luong is not None and tab.luong.is_alive()
-            for tab in (self.tab_suggest, self.tab_trends)
+            for tab in (self.tab_suggest, self.tab_trends, self.tab_writer)
         )
 
     def _khi_dong_cua_so(self) -> None:

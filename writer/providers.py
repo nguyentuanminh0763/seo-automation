@@ -1,0 +1,255 @@
+# -*- coding: utf-8 -*-
+"""
+Lớp gọi API của các nhà cung cấp AI.
+
+Đây là chỗ duy nhất trong dự án biết cách nói chuyện với Gemini và Claude.
+Phần còn lại của công cụ chỉ gọi `viet_bai()` và nhận về KetQua — nên sau này
+thêm nhà cung cấp thứ ba chỉ cần thêm một lớp ở file này.
+"""
+
+import json
+from dataclasses import dataclass
+from typing import List, Optional
+
+import requests
+
+from . import config
+from .settings import Settings
+
+URL_GEMINI = "https://generativelanguage.googleapis.com/v1beta"
+
+
+class LoiGoiAI(Exception):
+    """Lỗi khi gọi API. Thông điệp đã được viết lại cho người không rành kỹ thuật."""
+
+
+@dataclass
+class KetQua:
+    """Kết quả một lần gọi AI."""
+
+    noi_dung: str
+    model: str
+    token_vao: int = 0
+    token_ra: int = 0
+
+    def chi_phi_usd(self, st: Settings) -> Optional[float]:
+        """Ước tính chi phí. None nếu không biết đơn giá."""
+        gia = st.bang_gia()
+        if gia is None:
+            return None
+        return (self.token_vao * gia["vao"] + self.token_ra * gia["ra"]) / 1_000_000
+
+    def mo_ta_chi_phi(self, st: Settings) -> str:
+        """Chuỗi hiển thị chi phí trên giao diện."""
+        usd = self.chi_phi_usd(st)
+        if usd is None:
+            return f"{self.token_ra:,} token"
+        if usd == 0:
+            return f"{self.token_ra:,} token · miễn phí"
+        vnd = usd * config.TY_GIA_VND
+        return f"{self.token_ra:,} token · ~{vnd:,.0f}đ"
+
+
+# =============================================================================
+# GOOGLE GEMINI
+# =============================================================================
+
+class NhaCungCapGemini:
+    """Gọi Google Gemini qua REST. Không cần cài thêm thư viện nào."""
+
+    def __init__(self, st: Settings):
+        self.st = st
+
+    def viet_bai(self, prompt: str, nen_dung=None) -> KetQua:
+        url = f"{URL_GEMINI}/models/{self.st.model}:generateContent"
+        than_yeu_cau = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": self.st.max_tokens},
+        }
+
+        try:
+            phan_hoi = requests.post(
+                url,
+                headers={
+                    "x-goog-api-key": self.st.api_key,
+                    "Content-Type": "application/json",
+                },
+                json=than_yeu_cau,
+                timeout=self.st.timeout,
+            )
+        except requests.Timeout:
+            raise LoiGoiAI(
+                f"Quá {self.st.timeout} giây chưa thấy hồi âm.\n"
+                f"Thử tăng TIMEOUT trong file .env, hoặc kiểm tra mạng."
+            ) from None
+        except requests.RequestException as loi:
+            raise LoiGoiAI(f"Không kết nối được tới Google: {loi}") from None
+
+        if phan_hoi.status_code != 200:
+            raise LoiGoiAI(self._giai_thich_loi(phan_hoi))
+
+        return self._doc_ket_qua(phan_hoi.json())
+
+    # ------------------------------------------------------------------
+
+    def _doc_ket_qua(self, du_lieu: dict) -> KetQua:
+        """Bóc nội dung bài viết ra khỏi JSON Gemini trả về."""
+        cac_ung_vien = du_lieu.get("candidates") or []
+        if not cac_ung_vien:
+            raise LoiGoiAI(
+                "Gemini không trả về nội dung nào.\n"
+                "Thường do bộ lọc an toàn chặn. Thử sửa lại prompt cho trung tính hơn."
+            )
+
+        ung_vien = cac_ung_vien[0]
+        cac_phan = (ung_vien.get("content") or {}).get("parts") or []
+        noi_dung = "".join(p.get("text", "") for p in cac_phan).strip()
+
+        if not noi_dung:
+            ly_do = ung_vien.get("finishReason", "không rõ")
+            if ly_do == "MAX_TOKENS":
+                raise LoiGoiAI(
+                    "Bài viết bị cắt ngay từ đầu vì chạm giới hạn độ dài.\n"
+                    "Tăng MAX_TOKENS trong file .env."
+                )
+            raise LoiGoiAI(f"Gemini trả về rỗng (lý do: {ly_do}).")
+
+        thong_ke = du_lieu.get("usageMetadata") or {}
+        return KetQua(
+            noi_dung=noi_dung,
+            model=self.st.model,
+            token_vao=thong_ke.get("promptTokenCount", 0),
+            token_ra=thong_ke.get("candidatesTokenCount", 0),
+        )
+
+    def _giai_thich_loi(self, phan_hoi) -> str:
+        """Đổi mã lỗi HTTP thành câu tiếng Việt kèm cách xử lý."""
+        ma = phan_hoi.status_code
+        try:
+            chi_tiet = phan_hoi.json().get("error", {}).get("message", "")
+        except (ValueError, json.JSONDecodeError):
+            chi_tiet = phan_hoi.text[:200]
+
+        if ma in (400, 403) and "API key" in chi_tiet:
+            return ("API key không hợp lệ.\n"
+                    "Kiểm tra lại GEMINI_API_KEY trong file .env.\n"
+                    "Lấy key mới tại https://aistudio.google.com")
+
+        if ma == 404:
+            # Lỗi hay gặp nhất: tên model đã đổi. Liệt kê luôn model dùng được.
+            ds = self.liet_ke_model()
+            goi_y = "\n".join(f"  {m}" for m in ds[:12]) if ds else "  (không lấy được danh sách)"
+            return (f"Không tìm thấy model '{self.st.model}'.\n\n"
+                    f"Các model tài khoản bạn đang dùng được:\n{goi_y}\n\n"
+                    f"Chọn một cái, sửa dòng GEMINI_MODEL trong file .env.")
+
+        if ma == 429:
+            return ("Đã chạm giới hạn của gói miễn phí.\n"
+                    "Chờ ít phút rồi thử lại. Gói free giới hạn số lượt mỗi phút và mỗi ngày.")
+
+        return f"Google báo lỗi {ma}: {chi_tiet}"
+
+    def liet_ke_model(self) -> List[str]:
+        """Hỏi Google xem tài khoản này dùng được những model nào."""
+        try:
+            phan_hoi = requests.get(
+                f"{URL_GEMINI}/models",
+                headers={"x-goog-api-key": self.st.api_key},
+                timeout=30,
+            )
+            if phan_hoi.status_code != 200:
+                return []
+            ket_qua = []
+            for m in phan_hoi.json().get("models", []):
+                # Chỉ lấy model sinh văn bản được
+                if "generateContent" in (m.get("supportedGenerationMethods") or []):
+                    ket_qua.append(m.get("name", "").replace("models/", ""))
+            return ket_qua
+        except Exception:  # noqa: BLE001 - chỉ là tiện ích phụ, hỏng cũng không sao
+            return []
+
+
+# =============================================================================
+# ANTHROPIC CLAUDE
+# =============================================================================
+
+class NhaCungCapClaude:
+    """
+    Gọi Anthropic Claude qua thư viện chính thức.
+
+    Thư viện `anthropic` chỉ được nạp KHI THỰC SỰ DÙNG, nên người chỉ xài
+    Gemini không cần cài nó.
+    """
+
+    def __init__(self, st: Settings):
+        self.st = st
+
+    def viet_bai(self, prompt: str, nen_dung=None) -> KetQua:
+        try:
+            import anthropic
+        except ImportError:
+            raise LoiGoiAI(
+                "Chưa cài thư viện cho Claude.\n\n"
+                "Mở PowerShell và chạy:\n"
+                "python -m pip install anthropic\n\n"
+                "Hoặc đổi NHA_CUNG_CAP=gemini trong file .env để dùng bản miễn phí."
+            ) from None
+
+        client = anthropic.Anthropic(api_key=self.st.api_key, timeout=self.st.timeout)
+
+        try:
+            phan_hoi = client.messages.create(
+                model=self.st.model,
+                max_tokens=self.st.max_tokens,
+                thinking={"type": "adaptive"},
+                output_config={"effort": "medium"},
+                messages=[{"role": "user", "content": prompt}],
+            )
+        except anthropic.AuthenticationError:
+            raise LoiGoiAI(
+                "API key của Claude không hợp lệ.\n"
+                "Kiểm tra ANTHROPIC_API_KEY trong file .env."
+            ) from None
+        except anthropic.RateLimitError:
+            raise LoiGoiAI("Đang bị giới hạn tốc độ. Chờ một lát rồi thử lại.") from None
+        except anthropic.NotFoundError:
+            raise LoiGoiAI(
+                f"Không tìm thấy model '{self.st.model}'.\n"
+                f"Sửa dòng CLAUDE_MODEL trong file .env thành claude-opus-5, "
+                f"claude-sonnet-5 hoặc claude-haiku-4-5."
+            ) from None
+        except anthropic.APIStatusError as loi:
+            raise LoiGoiAI(f"Claude báo lỗi {loi.status_code}: {loi.message}") from None
+        except anthropic.APIConnectionError:
+            raise LoiGoiAI("Không kết nối được tới Anthropic. Kiểm tra mạng.") from None
+
+        if phan_hoi.stop_reason == "refusal":
+            raise LoiGoiAI(
+                "Claude từ chối viết nội dung này.\n"
+                "Thử sửa lại prompt hoặc từ khóa cho trung tính hơn."
+            )
+
+        noi_dung = "".join(
+            khoi.text for khoi in phan_hoi.content if khoi.type == "text"
+        ).strip()
+
+        if not noi_dung:
+            raise LoiGoiAI("Claude trả về rỗng. Thử lại hoặc tăng MAX_TOKENS.")
+
+        return KetQua(
+            noi_dung=noi_dung,
+            model=phan_hoi.model,
+            token_vao=phan_hoi.usage.input_tokens,
+            token_ra=phan_hoi.usage.output_tokens,
+        )
+
+
+# =============================================================================
+
+def tao_nha_cung_cap(st: Settings):
+    """Chọn lớp gọi API theo cấu hình NHA_CUNG_CAP trong .env."""
+    if st.nha_cung_cap == "gemini":
+        return NhaCungCapGemini(st)
+    if st.nha_cung_cap == "claude":
+        return NhaCungCapClaude(st)
+    raise LoiGoiAI(f"Không hỗ trợ nhà cung cấp '{st.nha_cung_cap}'.")
