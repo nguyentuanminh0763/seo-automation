@@ -1,0 +1,11 @@
+# Cài đặt: python -m pip install -r requirements.txt
+#
+# LƯU Ý VỀ urllib3:
+#   pytrends 4.9.2 gọi urllib3 Retry(method_whitelist=...) - tham số đã bị xóa ở urllib3 2.x.
+#   Không sao, vì code trong trends/client.py CỐ TÌNH không truyền retries= vào TrendReq
+#   (đã có vòng retry riêng ở trends/fetcher.py). Nên urllib3 2.x vẫn chạy tốt.
+
+pandas>=2.0
+openpyxl>=3.1
+pytrends>=4.9.2
+requests>=2.31
