@@ -81,6 +81,44 @@ Cả hai công cụ đều dùng API **không chính thức** của Google. Vi p
 
 ---
 
+## Quy ước commit — BẮT BUỘC
+
+Thông điệp commit phải viết bằng **tiếng Anh** và có **prefix chuẩn** (Conventional Commits).
+Đây là ngoại lệ duy nhất so với luật "mọi thứ bằng tiếng Việt" — tài liệu và chú thích code
+vẫn tiếng Việt, chỉ riêng commit dùng tiếng Anh.
+
+| Prefix | Dùng khi |
+|---|---|
+| `feat:` | Thêm tính năng mới |
+| `fix:` | Sửa lỗi |
+| `docs:` | Chỉ thay đổi tài liệu |
+| `refactor:` | Đổi cấu trúc code, không đổi hành vi |
+| `chore:` | Việc lặt vặt: cấu hình, dependency, .gitignore |
+| `perf:` | Cải thiện tốc độ |
+| `test:` | Thêm hoặc sửa kiểm thử |
+
+**Định dạng:**
+
+```
+<prefix>: <tóm tắt ngắn, chữ thường, không dấu chấm cuối>
+
+<Phần thân giải thích LÝ DO thay đổi, không phải liệt kê lại code.
+Xuống dòng ở khoảng 72 ký tự.>
+```
+
+Ví dụ đúng:
+
+```
+fix: drop retries kwarg from TrendReq for urllib3 2.x
+
+pytrends 4.9.2 calls urllib3 Retry(method_whitelist=...), which was
+removed in urllib3 2.x. Passing retries= broke every request.
+```
+
+Ví dụ sai: `Sửa lỗi pytrends`, `update code`, `fix bug`.
+
+---
+
 ## Quy trình cho thay đổi lớn
 
 Trước khi làm:
