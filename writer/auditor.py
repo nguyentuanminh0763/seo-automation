@@ -422,31 +422,45 @@ def tim_so_lieu_nghi_bia(noi_dung: str) -> List[str]:
     """
     kq = []
     for cau in re.split(r"(?<=[.!?…])\s+|\n", _bo_markup(noi_dung)):
-        if not re.search(r"\d{1,3}\s?%|\b\d{2,4}\s+(ca|trường hợp|khách|lượt)\b", cau, re.I):
-            continue
         if re.search(r"mật độ|từ khóa|SEO Title|Meta", cau, re.I):
             continue        # câu đang bàn về chính bài viết, không phải số liệu
-        if _la_cach_noi_quen(cau):
-            continue
-        kq.append(cau.strip())
+        # Gạch bỏ những con số vô hại rồi mới soi phần còn lại. Lọc theo kiểu
+        # "thấy số vô hại thì tha cả câu" sẽ bỏ sót câu vừa có nồng độ vừa có
+        # số liệu bịa: "dùng cồn 90% để lau, và 65% khách gặp lỗi này".
+        con_lai = _CACH_NOI_QUEN.sub(" ", _NONG_DO.sub(" ", cau))
+        if _DANG_NGHI.search(con_lai):
+            kq.append(cau.strip())
     return kq
+
+
+# Con số nghe thuyết phục mà AI hay bịa: tỷ lệ phần trăm và số ca/trường hợp.
+_DANG_NGHI = re.compile(
+    r"\d{1,3}\s?%|\b\d{2,4}\s+(ca|trường hợp|khách|lượt)\b", re.I)
 
 
 # "mới 100%", "cam kết 100% chính hãng" là cách nói quen của ngành bán lẻ VN,
 # không phải số liệu thống kê. Bản đầu bắt nhầm 5/5 câu kiểu này nên phải lọc.
+# Bổ sung 2026-08-20: "không tuyệt đối 100% là RAM hỏng" cũng bị bắt nhầm —
+# đây là lối nhấn mạnh, nên nhận thêm cả dạng phủ định đứng trước.
 _CACH_NOI_QUEN = re.compile(
-    r"(mới|nguyên|chính hãng|cam kết|đảm bảo|bảo đảm|hoàn toàn|zin)\s*100\s?%"
+    r"(mới|nguyên|chính hãng|cam kết|đảm bảo|bảo đảm|hoàn toàn|tuyệt đối|chắc chắn|zin)"
+    r"\s*\S{0,10}?\s*100\s?%"
     r"|100\s?%\s*(chính hãng|mới|nguyên|zin|new)",
     re.I,
 )
 
-
-def _la_cach_noi_quen(cau: str) -> bool:
-    """Câu chỉ chứa '100%' theo lối nói quen thì bỏ qua, không coi là số liệu."""
-    if _CACH_NOI_QUEN.search(cau):
-        # Vẫn báo nếu trong câu còn phần trăm KHÁC 100 — đó mới là số đáng ngờ.
-        return not re.search(r"\b(?!100\b)\d{1,3}\s?%", cau)
-    return False
+# Phần trăm chỉ NỒNG ĐỘ hoặc thông số kỹ thuật, không phải số liệu thống kê.
+# "lau chân RAM bằng cồn 90%" là hướng dẫn thao tác — bắt nhầm câu này thì người
+# dùng phải bỏ qua cảnh báo mỗi bài, và cảnh báo bị bỏ qua là cảnh báo vô dụng.
+# Cố ý KHÔNG nhận "hiệu suất", "tăng", "giảm" — "hiệu suất tăng 40%" mới đúng là
+# loại số liệu cần soi.
+_NONG_DO = re.compile(
+    # Cho phép vài chữ đệm giữa danh từ và con số ("độ ẩm phòng dưới 60%"),
+    # nhưng không cho vượt qua dấu chấm sang câu khác.
+    r"(cồn|isopropyl|ipa|dung dịch|nồng độ|độ ẩm|pin|dung lượng)"
+    r"[^.!?]{0,20}?\d{1,3}\s?%",
+    re.I,
+)
 
 
 # =============================================================================
