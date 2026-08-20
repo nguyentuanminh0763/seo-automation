@@ -31,7 +31,7 @@ class CuaSoCauHinh(tk.Toplevel):
     def __init__(self, cha, thu_muc_goc: str, khi_luu=None):
         super().__init__(cha)
         self.title("Cấu hình AI")
-        self.geometry("620x560")
+        self.geometry("620x700")
         self.resizable(False, False)
 
         self.thu_muc_goc = thu_muc_goc
@@ -108,8 +108,32 @@ class CuaSoCauHinh(tk.Toplevel):
                   text="Gõ tay được. Bấm Tải danh sách để lấy model tài khoản bạn dùng được.",
                   foreground="#777", font=("Segoe UI", 8)).pack(anchor="w", pady=(4, 0))
 
+        # --- Mức suy nghĩ (chỉ OpenAI dòng gpt-5) ---
+        self.khung_suy_nghi = ttk.LabelFrame(khung, text="Mức suy nghĩ", padding=10)
+        self.khung_suy_nghi.pack(fill="x", pady=(0, 12))
+        self.bien_suy_nghi = tk.StringVar()
+        o_sn = ttk.Frame(self.khung_suy_nghi)
+        o_sn.pack(fill="x")
+        self.o_suy_nghi = ttk.Combobox(
+            o_sn, textvariable=self.bien_suy_nghi, state="readonly", width=12,
+            values=[m or "(mặc định)" for m in config.MUC_SUY_NGHI],
+        )
+        self.o_suy_nghi.pack(side="left")
+        self.o_suy_nghi.bind("<<ComboboxSelected>>", lambda _e: self._giai_thich_suy_nghi())
+        self.nhan_suy_nghi = ttk.Label(o_sn, text="", foreground="#777",
+                                       font=("Segoe UI", 8), wraplength=420,
+                                       justify="left")
+        self.nhan_suy_nghi.pack(side="left", padx=(8, 0))
+        ttk.Label(self.khung_suy_nghi,
+                  text="Trước khi viết chữ đầu tiên, AI bỏ ra một lượng token để tự nghĩ. "
+                       "Bạn không đọc được chúng nhưng vẫn phải chờ và vẫn trả tiền.\n"
+                       "Hạ mức xuống thì nhanh hơn, nhưng bài có thể kém đi — "
+                       "viết thử 1 bài rồi bấm Kiểm tra SEO so điểm với bài cũ.",
+                  foreground="#777", font=("Segoe UI", 8),
+                  justify="left").pack(anchor="w", pady=(6, 0))
+
         # --- Thông số ---
-        khung_ts = ttk.LabelFrame(khung, text="Thông số", padding=10)
+        self.khung_thong_so = khung_ts = ttk.LabelFrame(khung, text="Thông số", padding=10)
         khung_ts.pack(fill="x", pady=(0, 12))
         self.bien_max = tk.StringVar()
         self.bien_timeout = tk.StringVar()
@@ -147,6 +171,12 @@ class CuaSoCauHinh(tk.Toplevel):
         self.bien_ncc.set(ncc)
         self.bien_max.set(self.env.get("MAX_TOKENS") or str(config.MAX_TOKENS_MAC_DINH))
         self.bien_timeout.set(self.env.get("TIMEOUT") or str(config.TIMEOUT_MAC_DINH))
+
+        muc = (self.env.get("REASONING_EFFORT") or "").strip().lower()
+        if muc not in config.MUC_SUY_NGHI:
+            muc = config.MUC_SUY_NGHI_MAC_DINH
+        self.bien_suy_nghi.set(muc or "(mặc định)")
+
         self._doi_nha_cung_cap()
 
     def _doi_nha_cung_cap(self) -> None:
@@ -161,7 +191,25 @@ class CuaSoCauHinh(tk.Toplevel):
         self.bien_model.set(self.env.get(tt["model_env"]) or mac_dinh)
         self.o_model["values"] = []
         self.nhan_dang_key.configure(text=f"Key có dạng: {tt['dang_key']}")
+
+        # Chỉ OpenAI dòng gpt-5 có mức suy nghĩ. Hiện ô này cho Gemini/Claude
+        # chỉ tổ làm người dùng tưởng chỉnh được rồi thắc mắc sao không đổi gì.
+        if self.bien_ncc.get() == "openai":
+            self.khung_suy_nghi.pack(fill="x", pady=(0, 12), before=self.khung_thong_so)
+        else:
+            self.khung_suy_nghi.pack_forget()
+        self._giai_thich_suy_nghi()
+
         self._bao("", "#555")
+
+    def _muc_suy_nghi_dang_chon(self) -> str:
+        """Ô hiện '(mặc định)' cho dễ đọc, nhưng giá trị lưu xuống là chuỗi rỗng."""
+        muc = self.bien_suy_nghi.get().strip()
+        return "" if muc.startswith("(") else muc
+
+    def _giai_thich_suy_nghi(self) -> None:
+        muc = self._muc_suy_nghi_dang_chon()
+        self.nhan_suy_nghi.configure(text=config.GIAI_THICH_MUC_SUY_NGHI.get(muc, ""))
 
     def _bat_tat_hien_key(self) -> None:
         self.o_key.configure(show="" if self.bien_hien.get() else "●")
@@ -182,6 +230,7 @@ class CuaSoCauHinh(tk.Toplevel):
             max_tokens=_so_nguyen(self.bien_max.get(), config.MAX_TOKENS_MAC_DINH),
             timeout=60,
             thu_muc_goc=self.thu_muc_goc,
+            muc_suy_nghi=self._muc_suy_nghi_dang_chon(),
         )
 
     def _chay_nen(self, viec, khi_xong) -> None:
@@ -280,6 +329,7 @@ class CuaSoCauHinh(tk.Toplevel):
             tt["model_env"]: self.bien_model.get().strip(),
             "MAX_TOKENS": str(_so_nguyen(self.bien_max.get(), config.MAX_TOKENS_MAC_DINH)),
             "TIMEOUT": str(_so_nguyen(self.bien_timeout.get(), config.TIMEOUT_MAC_DINH)),
+            "REASONING_EFFORT": self._muc_suy_nghi_dang_chon(),
         })
 
         if self.khi_luu is not None:

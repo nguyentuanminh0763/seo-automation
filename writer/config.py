@@ -39,6 +39,23 @@ OPENAI_MODEL_MAC_DINH = "gpt-5"
 MAX_TOKENS_MAC_DINH = 24000
 TIMEOUT_MAC_DINH = 420
 
+# Mức "suy nghĩ" của các model dòng gpt-5. Model bỏ ra một lượng token vô hình
+# để nghĩ trước khi viết chữ đầu tiên — bạn không đọc được chúng nhưng vẫn phải
+# chờ và vẫn phải trả tiền. Không khai báo thì OpenAI mặc định là "medium".
+#
+# Để trống ("") = không gửi tham số, giữ nguyên hành vi mặc định của OpenAI.
+# Bài viết đi theo khung có sẵn rất chi tiết trong prompt nên nhiều khả năng
+# không cần nghĩ nhiều — nhưng phải chạy thử rồi so điểm mới biết chắc.
+MUC_SUY_NGHI = ["", "minimal", "low", "medium", "high"]
+MUC_SUY_NGHI_MAC_DINH = ""
+GIAI_THICH_MUC_SUY_NGHI = {
+    "": "Để OpenAI tự quyết (hiện là medium) — giữ nguyên như trước",
+    "minimal": "Nhanh nhất, gần như không nghĩ. Thử trước, thấy bài tệ thì tăng lên",
+    "low": "Nghĩ ít. Thường là điểm cân bằng tốt cho bài theo khung có sẵn",
+    "medium": "Mặc định của OpenAI",
+    "high": "Nghĩ nhiều nhất, chậm và đắt nhất",
+}
+
 # =============================================================================
 # 3. BẢNG GIÁ (USD cho 1 triệu token) — để ước tính chi phí hiển thị
 # =============================================================================

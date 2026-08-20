@@ -41,9 +41,17 @@ class BaiViet:
 def viet_bai(keyword: str,
              prompt: Prompt,
              st: Settings,
-             ghi_chu_them: str = "") -> BaiViet:
+             ghi_chu_them: str = "",
+             nen_dung=None,
+             khi_co_chu=None) -> BaiViet:
     """
     Viết một bài từ từ khóa. Ném LoiGoiAI nếu API lỗi.
+
+    Tham số:
+        nen_dung   : hàm trả về True khi người dùng bấm Dừng.
+        khi_co_chu : hàm nhận từng mẩu chữ trong lúc AI đang viết, để giao diện
+                     hiện chữ chạy dần. Chạy ở LUỒNG NỀN nên chỉ được đẩy vào
+                     hàng đợi, tuyệt đối không gọi tkinter.
     """
     keyword = (keyword or "").strip()
     if not keyword:
@@ -53,9 +61,13 @@ def viet_bai(keyword: str,
 
     log.info("Đang viết bài cho: %s", keyword)
     log.info("Dùng prompt: %s | AI: %s", prompt.ten, st.mo_ta())
+    if st.nha_cung_cap == "openai":
+        log.info("Mức suy nghĩ: %s", st.mo_ta_suy_nghi())
 
     nha_cung_cap = tao_nha_cung_cap(st)
-    ket_qua = nha_cung_cap.viet_bai(noi_dung_prompt)
+    ket_qua = nha_cung_cap.viet_bai(noi_dung_prompt,
+                                    nen_dung=nen_dung,
+                                    khi_co_chu=khi_co_chu)
 
     markdown = ket_qua.noi_dung
     html = formatter.sang_html(markdown)
@@ -64,6 +76,15 @@ def viet_bai(keyword: str,
     so_cho_trong = markdown.count(config.DAU_HIEU_CAN_BO_SUNG)
 
     log.info("Xong: %d từ · %s", so_tu, ket_qua.mo_ta_chi_phi(st))
+
+    # Token suy nghĩ là phần bạn trả tiền và ngồi chờ nhưng không đọc được chữ
+    # nào. Ghi ra để biết có đáng hạ mức suy nghĩ trong Cấu hình AI hay không.
+    if ket_qua.token_suy_nghi:
+        phan_tram = ket_qua.token_suy_nghi / ket_qua.token_ra * 100 if ket_qua.token_ra else 0
+        log.info("Trong đó %s token là AI tự nghĩ (%.0f%%) — phần này không nằm "
+                 "trong bài. Muốn nhanh hơn thì hạ 'Mức suy nghĩ' ở Cấu hình AI.",
+                 f"{ket_qua.token_suy_nghi:,}", phan_tram)
+
     if so_cho_trong:
         log.warning("Bài còn %d chỗ cần bạn điền số liệu thật trước khi đăng.",
                     so_cho_trong)

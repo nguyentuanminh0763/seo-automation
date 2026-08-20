@@ -40,6 +40,11 @@ class KetQua:
     model: str
     token_vao: int = 0
     token_ra: int = 0
+    # Token model bỏ ra để "nghĩ" trước khi viết. Không đọc được, không nằm
+    # trong bài, nhưng nằm trong token_ra và trong hóa đơn. Đo để biết mức
+    # suy nghĩ đang ăn mất bao nhiêu. 0 = model không phải loại biết suy nghĩ,
+    # hoặc nhà cung cấp không báo con số này.
+    token_suy_nghi: int = 0
 
     def chi_phi_usd(self, st: Settings) -> Optional[float]:
         """Ước tính chi phí. None nếu không biết đơn giá."""
@@ -69,9 +74,13 @@ class NhaCungCapGemini:
     def __init__(self, st: Settings):
         self.st = st
 
-    def viet_bai(self, prompt: str, nen_dung=None) -> KetQua:
+    def viet_bai(self, prompt: str, nen_dung=None, khi_co_chu=None) -> KetQua:
         """
         Gọi Gemini, tự thử lại khi model quá tải.
+
+        Nhận `khi_co_chu` cho cùng chữ ký với các nhà cung cấp khác nhưng KHÔNG
+        dùng tới — Gemini chưa làm chữ chạy dần. Người dùng Gemini vẫn chờ trọn
+        bài như trước, không tệ hơn nhưng cũng không nhanh hơn.
 
         Gói miễn phí dùng chung tài nguyên với rất nhiều người nên hay gặp
         503 "high demand" — lỗi tạm thời, chờ vài giây là qua. Đã gặp thật
@@ -342,7 +351,9 @@ class NhaCungCapClaude:
     def __init__(self, st: Settings):
         self.st = st
 
-    def viet_bai(self, prompt: str, nen_dung=None) -> KetQua:
+    def viet_bai(self, prompt: str, nen_dung=None, khi_co_chu=None) -> KetQua:
+        # `khi_co_chu` nhận cho đồng bộ chữ ký nhưng chưa dùng — Claude cũng
+        # chưa làm chữ chạy dần. Hiện chỉ OpenAI có.
         try:
             import anthropic
         except ImportError:
@@ -420,11 +431,23 @@ class NhaCungCapOpenAI:
     def __init__(self, st: Settings):
         self.st = st
 
-    def viet_bai(self, prompt: str, nen_dung=None) -> KetQua:
+    def viet_bai(self, prompt: str, nen_dung=None, khi_co_chu=None) -> KetQua:
+        """
+        Gọi OpenAI và trả về bài viết.
+
+        Tham số:
+            khi_co_chu : hàm nhận một mẩu chữ, được gọi liên tục trong lúc model
+                         đang viết. Giao diện dùng nó để hiện chữ chạy dần thay
+                         vì đứng im mấy chục giây.
+
+                         ⚠ Hàm này chạy ở LUỒNG NỀN nên tuyệt đối không được
+                         đụng vào tkinter — chỉ được đẩy vào hàng đợi.
+        """
         for lan_thu in range(1, SO_LAN_THU_LAI + 1):
             if nen_dung is not None and nen_dung():
                 raise LoiGoiAI("Đã dừng theo yêu cầu.")
 
+            dong_chay = not self._tat_dong_chay
             try:
                 phan_hoi = requests.post(
                     f"{URL_OPENAI}/chat/completions",
@@ -432,6 +455,7 @@ class NhaCungCapOpenAI:
                              "Content-Type": "application/json"},
                     json=self._dung_than_yeu_cau(prompt),
                     timeout=self.st.timeout,
+                    stream=dong_chay,
                 )
             except requests.Timeout:
                 raise LoiGoiAI(
@@ -442,6 +466,8 @@ class NhaCungCapOpenAI:
                 raise LoiGoiAI(f"Không kết nối được tới OpenAI: {loi}") from None
 
             if phan_hoi.status_code == 200:
+                if dong_chay:
+                    return self._doc_dong_chay(phan_hoi, nen_dung, khi_co_chu)
                 return self._doc_ket_qua(phan_hoi.json())
 
             # Model đời mới không nhận max_tokens mà đòi max_completion_tokens,
@@ -450,6 +476,14 @@ class NhaCungCapOpenAI:
             if self._sai_ten_tham_so(phan_hoi) and not self._da_doi_tham_so:
                 self._da_doi_tham_so = True
                 log.info("Model này dùng tên tham số khác — thử lại...")
+                continue
+
+            # Vài model / vài tài khoản không được phép nhận chữ chạy dần.
+            # Tắt đi rồi thử lại một lần: chờ lâu hơn còn hơn không viết được.
+            if self._bi_cam_dong_chay(phan_hoi) and not self._tat_dong_chay:
+                self._tat_dong_chay = True
+                log.warning("Tài khoản/model này không cho nhận chữ chạy dần. "
+                            "Chuyển sang chờ trọn bài rồi hiện một lần.")
                 continue
 
             if phan_hoi.status_code not in (429, 500, 503) or lan_thu == SO_LAN_THU_LAI:
@@ -463,22 +497,103 @@ class NhaCungCapOpenAI:
         raise LoiGoiAI("Không gọi được OpenAI sau nhiều lần thử.")
 
     _da_doi_tham_so = False
+    _tat_dong_chay = False
 
     def _dung_than_yeu_cau(self, prompt: str) -> dict:
         ten_gioi_han = "max_tokens" if self._da_doi_tham_so else "max_completion_tokens"
-        return {
+        than = {
             "model": self.st.model,
             "messages": [{"role": "user", "content": prompt}],
             ten_gioi_han: self.st.max_tokens,
         }
+        if self.st.muc_suy_nghi:
+            than["reasoning_effort"] = self.st.muc_suy_nghi
+        if not self._tat_dong_chay:
+            than["stream"] = True
+            # Không xin thì gói chữ chạy dần KHÔNG kèm số token, mất luôn
+            # phần đo token suy nghĩ — thứ chính để biết nên đặt mức nào.
+            than["stream_options"] = {"include_usage": True}
+        return than
+
+    def _doc_dong_chay(self, phan_hoi, nen_dung, khi_co_chu) -> KetQua:
+        """
+        Ghép bài từ dòng chữ chạy dần (Server-Sent Events).
+
+        Mỗi dòng có dạng `data: {...}`, dòng cuối là `data: [DONE]`. Gói cuối
+        cùng mới chứa `usage`, nên phải đọc hết chứ không được dừng sớm.
+        """
+        # requests đoán bảng mã từ header; đoán trượt là vỡ hết dấu tiếng Việt.
+        phan_hoi.encoding = "utf-8"
+
+        manh: List[str] = []
+        dung: dict = {}
+        model = self.st.model
+        ly_do_dung = ""
+
+        try:
+            for dong in phan_hoi.iter_lines(decode_unicode=True):
+                if nen_dung is not None and nen_dung():
+                    raise LoiGoiAI("Đã dừng theo yêu cầu.")
+                if not dong or not dong.startswith("data:"):
+                    continue
+
+                goi = dong[5:].strip()
+                if goi == "[DONE]":
+                    break
+                try:
+                    du_lieu = json.loads(goi)
+                except ValueError:
+                    continue        # gói vỡ giữa chừng -> bỏ, đừng làm sập bài
+
+                model = du_lieu.get("model") or model
+                if du_lieu.get("usage"):
+                    dung = du_lieu["usage"]
+
+                for lua_chon in du_lieu.get("choices") or []:
+                    phan = (lua_chon.get("delta") or {}).get("content")
+                    if phan:
+                        manh.append(phan)
+                        if khi_co_chu is not None:
+                            khi_co_chu(phan)
+                    if lua_chon.get("finish_reason"):
+                        ly_do_dung = lua_chon["finish_reason"]
+        except requests.RequestException as loi:
+            raise LoiGoiAI(f"Đứt kết nối giữa chừng: {loi}") from None
+        finally:
+            phan_hoi.close()
+
+        noi_dung = "".join(manh).strip()
+        if not noi_dung:
+            if ly_do_dung == "length":
+                raise LoiGoiAI("Bài bị cắt vì chạm giới hạn độ dài.\n"
+                               "Tăng MAX_TOKENS trong màn hình Cấu hình AI.")
+            raise LoiGoiAI(f"OpenAI trả về rỗng (lý do: {ly_do_dung or 'không rõ'}).")
+
+        chi_tiet = dung.get("completion_tokens_details") or {}
+        return KetQua(
+            noi_dung=noi_dung,
+            model=model,
+            token_vao=dung.get("prompt_tokens", 0),
+            token_ra=dung.get("completion_tokens", 0),
+            token_suy_nghi=chi_tiet.get("reasoning_tokens", 0),
+        )
 
     @staticmethod
-    def _sai_ten_tham_so(phan_hoi) -> bool:
+    def _thong_diep_loi(phan_hoi) -> str:
         try:
-            tb = phan_hoi.json().get("error", {}).get("message", "")
+            return phan_hoi.json().get("error", {}).get("message", "")
         except (ValueError, json.JSONDecodeError):
-            return False
+            return ""
+
+    @classmethod
+    def _sai_ten_tham_so(cls, phan_hoi) -> bool:
+        tb = cls._thong_diep_loi(phan_hoi)
         return "max_completion_tokens" in tb or "max_tokens" in tb
+
+    @classmethod
+    def _bi_cam_dong_chay(cls, phan_hoi) -> bool:
+        tb = cls._thong_diep_loi(phan_hoi).lower()
+        return "stream" in tb or "verified" in tb or "verify" in tb
 
     def _doc_ket_qua(self, du_lieu: dict) -> KetQua:
         cac_lua_chon = du_lieu.get("choices") or []
@@ -497,11 +612,13 @@ class NhaCungCapOpenAI:
             raise LoiGoiAI(f"OpenAI trả về rỗng (lý do: {ly_do}).")
 
         dung = du_lieu.get("usage") or {}
+        chi_tiet = dung.get("completion_tokens_details") or {}
         return KetQua(
             noi_dung=noi_dung,
             model=du_lieu.get("model", self.st.model),
             token_vao=dung.get("prompt_tokens", 0),
             token_ra=dung.get("completion_tokens", 0),
+            token_suy_nghi=chi_tiet.get("reasoning_tokens", 0),
         )
 
     def _giai_thich_loi(self, phan_hoi) -> str:

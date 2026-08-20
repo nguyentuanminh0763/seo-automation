@@ -15,6 +15,17 @@ class ThieuCauHinh(Exception):
     """Ném ra khi thiếu API key hoặc cấu hình sai. Giao diện bắt và hiện hướng dẫn."""
 
 
+def _muc_suy_nghi_hop_le(gia_tri: str) -> str:
+    """
+    Nhận giá trị gõ tay trong .env, trả về chuỗi rỗng nếu không hợp lệ.
+
+    Cố ý KHÔNG ném lỗi: gõ nhầm mức suy nghĩ mà không viết được bài nào thì
+    quá phiền. Sai thì lặng lẽ quay về mặc định của OpenAI.
+    """
+    gia_tri = (gia_tri or "").strip().lower()
+    return gia_tri if gia_tri in config.MUC_SUY_NGHI else ""
+
+
 @dataclass
 class Settings:
     """Toàn bộ tham số cho một lần viết bài."""
@@ -25,6 +36,8 @@ class Settings:
     max_tokens: int = config.MAX_TOKENS_MAC_DINH
     timeout: int = config.TIMEOUT_MAC_DINH
     thu_muc_goc: str = "."
+    # Chỉ dùng cho OpenAI dòng gpt-5. Chuỗi rỗng = không gửi tham số.
+    muc_suy_nghi: str = config.MUC_SUY_NGHI_MAC_DINH
 
     @classmethod
     def tu_env(cls, thu_muc_goc: str) -> "Settings":
@@ -78,12 +91,17 @@ class Settings:
             timeout=int(lay("TIMEOUT", str(config.TIMEOUT_MAC_DINH)) or
                         config.TIMEOUT_MAC_DINH),
             thu_muc_goc=thu_muc_goc,
+            muc_suy_nghi=_muc_suy_nghi_hop_le(lay("REASONING_EFFORT")),
         )
 
     def mo_ta(self) -> str:
         """Chuỗi ngắn hiện trên giao diện cho biết đang dùng AI nào."""
         thong_tin = config.NHA_CUNG_CAP.get(self.nha_cung_cap, {})
         return f"{thong_tin.get('ten', self.nha_cung_cap)} · {self.model}"
+
+    def mo_ta_suy_nghi(self) -> str:
+        """Chuỗi ngắn ghi vào log cho biết đang đặt mức suy nghĩ nào."""
+        return self.muc_suy_nghi or "mặc định của OpenAI"
 
     def bang_gia(self) -> Optional[dict]:
         """Lấy đơn giá của model hiện tại, None nếu không có trong bảng."""

@@ -8,6 +8,7 @@ sách từ khóa gốc, không có bảng kết quả, mà là một ô soạn t
 
 import os
 import queue
+import time
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import List, Optional
@@ -32,11 +33,17 @@ class TabWriter(ttk.Frame):
 
         self.thu_muc_goc = thu_muc_goc
         self.hang_doi_log: "queue.Queue" = queue.Queue()
+        # Hàng đợi RIÊNG cho chữ chạy dần. Không dùng chung với hàng đợi log vì
+        # log là từng dòng có mốc giờ, còn đây là những mẩu chữ rời phải nối
+        # liền nhau — trộn chung là vỡ cả hai.
+        self.hang_doi_chu: "queue.Queue[str]" = queue.Queue()
         self.luong: Optional[LuongChay] = None
         self.handler_log = None
         self.bai_hien_tai: Optional[BaiViet] = None
         self.duong_dan_file: Optional[str] = None
         self.danh_sach_prompt: List[Prompt] = []
+        self.luc_bat_dau: Optional[float] = None    # để đếm giây đang trôi
+        self.dang_chay_chu = False                  # đã nhận được chữ nào chưa
 
         self._dung_giao_dien()
         self._nap_prompt()
@@ -208,18 +215,32 @@ class TabWriter(ttk.Frame):
 
         self.hop_log.xoa_sach()
         self._xoa_ket_qua()
-        self._doi_trang_thai("Đang viết... thường mất 20–60 giây.", "#c60")
+        self.luc_bat_dau = time.monotonic()
+        self.dang_chay_chu = False
+        self._doi_trang_thai("Đang viết... bài 3.000 từ thường mất 90–130 giây.", "#c60")
         self.nut_viet.configure(state="disabled")
         self.handler_log = gan_vao_logger(self.hang_doi_log, "writer")
 
+        # Hàm này chạy ở LUỒNG NỀN. Nó chỉ được đẩy chữ vào hàng đợi —
+        # đụng vào tkinter từ đây là sập ngay với "main thread is not in
+        # main loop". Luồng chính lấy ra trong _doc_hang_doi_log().
+        def nhan_chu(manh: str) -> None:
+            self.hang_doi_chu.put(manh)
+
         self.luong = LuongChay(
-            ham_thu_thap=lambda _nen_dung: viet_bai(keyword, prompt, st, ghi_chu)
+            ham_thu_thap=lambda nen_dung: viet_bai(
+                keyword, prompt, st, ghi_chu,
+                nen_dung=nen_dung, khi_co_chu=nhan_chu,
+            )
         )
         self.luong.start()
 
     def _hoan_tat(self, bai, loi: Optional[str]) -> None:
         """Chạy ở luồng chính, do vòng lặp _doc_hang_doi_log gọi."""
         self.nut_viet.configure(state="normal")
+        giay = int(time.monotonic() - self.luc_bat_dau) if self.luc_bat_dau else 0
+        self.luc_bat_dau = None
+        self.dang_chay_chu = False
 
         if self.handler_log is not None:
             go_khoi_logger(self.handler_log, "writer")
@@ -259,7 +280,7 @@ class TabWriter(ttk.Frame):
 
         co_van_de = bai.so_cho_can_bo_sung or (bao_cao and bao_cao.so_chua_dat)
         self._doi_trang_thai(
-            f"Xong. {bai.so_tu} từ · {bai.mo_ta_chi_phi}{phan_them}",
+            f"Xong sau {giay} giây. {bai.so_tu} từ · {bai.mo_ta_chi_phi}{phan_them}",
             "#c60" if co_van_de else "#0a7",
         )
 
@@ -284,6 +305,13 @@ class TabWriter(ttk.Frame):
         self.bai_hien_tai = None
         self.duong_dan_file = None
         self.o_bai.delete("1.0", "end")
+        # Vét sạch chữ còn sót của lần chạy trước, nếu không mẩu cũ sẽ dính
+        # vào đầu bài mới.
+        try:
+            while True:
+                self.hang_doi_chu.get_nowait()
+        except queue.Empty:
+            pass
         for nut in (self.nut_copy, self.nut_mo_trinh_duyet,
                     self.nut_copy_html, self.nut_kiem_tra):
             nut.configure(state="disabled")
@@ -414,6 +442,9 @@ class TabWriter(ttk.Frame):
         except queue.Empty:
             pass
 
+        self._do_chu_chay_dan()
+        self._cap_nhat_dong_ho()
+
         if self.luong is not None and not self.luong.is_alive():
             luong_xong, self.luong = self.luong, None
             # Dùng thông điệp NGUYÊN VĂN của lỗi, không phải traceback cắt cụt.
@@ -421,6 +452,44 @@ class TabWriter(ttk.Frame):
             self._hoan_tat(luong_xong.ket_qua, thong_bao)
 
         self.after(CHU_KY_DOC_LOG_MS, self._doc_hang_doi_log)
+
+    def _do_chu_chay_dan(self) -> None:
+        """
+        Lấy chữ AI vừa viết ra khỏi hàng đợi và nối vào ô soạn thảo.
+
+        Gom hết mẩu đang chờ rồi mới chèn MỘT lần: mỗi lần chèn tkinter phải vẽ
+        lại ô, mà 120ms có thể dồn tới vài chục mẩu.
+        """
+        cac_manh = []
+        try:
+            while True:
+                cac_manh.append(self.hang_doi_chu.get_nowait())
+        except queue.Empty:
+            pass
+
+        if not cac_manh:
+            return
+
+        if not self.dang_chay_chu:
+            self.dang_chay_chu = True
+            self.o_bai.delete("1.0", "end")
+
+        self.o_bai.insert("end", "".join(cac_manh))
+        self.o_bai.see("end")
+
+    def _cap_nhat_dong_ho(self) -> None:
+        """
+        Đếm giây đang trôi. Màn hình đứng im 90 giây không phân biệt được với
+        treo máy, nên phải có thứ gì đó nhúc nhích.
+        """
+        if self.luc_bat_dau is None or self.luong is None:
+            return
+        giay = int(time.monotonic() - self.luc_bat_dau)
+        if self.dang_chay_chu:
+            so_chu = len(self.o_bai.get("1.0", "end-1c"))
+            self._doi_trang_thai(f"Đang viết... {giay} giây · {so_chu:,} ký tự", "#c60")
+        else:
+            self._doi_trang_thai(f"Đang viết... {giay} giây · AI đang suy nghĩ", "#c60")
 
     def _doi_trang_thai(self, chu: str, mau: str) -> None:
         self.nhan_trang_thai.configure(text=chu, foreground=mau)

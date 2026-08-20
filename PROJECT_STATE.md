@@ -1,6 +1,6 @@
 # SEO Automation — Project State
 
-> **Cập nhật lần cuối:** 2026-08-20 (Chạy thật bằng OpenAI gpt-5-mini, sửa lỗi mất thẻ H2)
+> **Cập nhật lần cuối:** 2026-08-20 (Chữ chạy dần, mức suy nghĩ, đo token suy nghĩ)
 > **Trạng thái tổng thể:** ✅ Cả hai công cụ đã chạy thật, ra kết quả thật, đã đẩy lên GitHub
 
 ---
@@ -29,7 +29,52 @@ Chi tiết từng lần chạy: [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md)
 
 ---
 
-## Cập nhật mới nhất — Chạy thật bằng OpenAI, sửa lỗi mất thẻ H2 (2026-08-20)
+## Cập nhật mới nhất — Tăng tốc cảm nhận khi viết bài (2026-08-20)
+
+**File đã sửa:** `writer/providers.py`, `writer/settings.py`, `writer/config.py`,
+`writer/generator.py`, `gui/tab_writer.py`, `gui/settings_window.py`,
+`prompts/giaphongpc-tong-quat.md`, `.env.example`
+
+**Vấn đề:** người dùng thấy viết bài bằng tool chậm hơn dán prompt vào ChatGPT.
+
+**Đo trước khi sửa:** toàn bộ code cục bộ chạy hết **31 mili giây** (ghép prompt 0ms,
+Markdown→HTML 1,4ms, chấm 25 tiêu chí SEO 29,4ms). 99,97% thời gian là cuộc gọi OpenAI.
+Tối ưu code không cứu được gì.
+
+**Nguyên nhân thật — không phải chậm mà là không thấy gì đang xảy ra.** Tool gọi
+`requests.post()` rồi chờ trọn 9.555 token viết xong mới hiện một cục. Màn hình đứng im 94
+giây. ChatGPT chạy chữ ra từ giây thứ 3 nên người dùng đọc trong lúc nó viết. Tổng thời gian
+nhiều khả năng ngang nhau; thời gian **ngồi nhìn màn hình trống** chênh nhau 30 lần.
+
+**Năm việc đã làm:**
+
+| # | Việc | Chi tiết |
+|---|---|---|
+| 1 | **Chữ chạy dần** | Bật `stream` cho OpenAI, đọc Server-Sent Events. Chữ đi qua một hàng đợi riêng (`hang_doi_chu`) lên giao diện — luồng nền không đụng tkinter |
+| 2 | **Đo token suy nghĩ** | Đọc `completion_tokens_details.reasoning_tokens`, ghi ra log kèm % |
+| 3 | **Chọn được mức suy nghĩ** | Ô mới trong Cấu hình AI: minimal/low/medium/high. Chỉ hiện khi dùng OpenAI |
+| 4 | **Đồng hồ đếm giây** | Trạng thái hiện "Đang viết... 42 giây · 1.234 ký tự". Sửa dòng ghi sai "20–60 giây" thành "90–130 giây" |
+| 5 | **Bật lại prompt caching** | Chuyển `{keyword}` từ ký tự 284 xuống cuối file. Phần đầu giống nhau giữa hai bài: **284 → 13.347 ký tự** |
+
+**Quyết định thiết kế:** mức suy nghĩ mặc định để **trống** = không gửi tham số = giữ nguyên
+hành vi cũ. Cố ý không tự hạ xuống `low`: nhanh hơn nhưng chất lượng có thể giảm, mà chưa
+chạy thật thì không được phép đổi ngầm.
+
+**Hai lưới an toàn** vì không chạy thật được: tài khoản/model bị cấm chữ chạy dần thì tự tắt
+rồi thử lại; gói SSE vỡ giữa chừng thì bỏ qua gói đó chứ không làm sập bài.
+
+**Chỉ OpenAI có chữ chạy dần.** Gemini và Claude nhận tham số cho đồng bộ chữ ký nhưng bỏ
+qua — vẫn chờ trọn bài như trước, không tệ hơn nhưng cũng không nhanh hơn.
+
+**Kiểm chứng — 24 + 19 phép thử, không tốn một đồng API nào:**
+dựng phản hồi SSE giả cho đi qua đúng hàm `_doc_dong_chay()` thật (ghép mẩu, giữ dấu tiếng
+Việt, đọc token suy nghĩ, gói vỡ, bấm Dừng, chạm giới hạn độ dài); dựng thật cửa sổ tkinter
+rồi bơm chữ qua hàng đợi và kiểm tra ô soạn thảo, đồng hồ, ô Mức suy nghĩ ẩn/hiện đúng theo
+nhà cung cấp. **Chưa đo được tốc độ thật** — phần đó người dùng tự chạy.
+
+---
+
+## Cập nhật trước đó — Chạy thật bằng OpenAI, sửa lỗi mất thẻ H2 (2026-08-20)
 
 **File đã sửa:** `prompts/giaphongpc-tong-quat.md`
 
@@ -248,6 +293,8 @@ Nhật ký chi tiết: [`docs/ai-journal/2026-08-19_khoi-tao-bo-cong-cu.md`](doc
 | 7 | `BANG_GIA` chưa có đơn giá OpenAI | Thấp | Ô chi phí chỉ hiện số token, không hiện tiền. Điền đơn giá từ trang billing của OpenAI vào `writer/config.py` |
 | 8 | Mỗi model mới chạy đúng 1 bài | Trung bình | Đủ để kết luận "không cần đổi sang gpt-5", chưa đủ để xếp hạng model. Muốn chắc thì chạy thêm 3–5 từ khóa khác nhau |
 | 9 | Từ khóa trong H2 và internal link chưa ổn định | Thấp | Bài RAM đạt (4 thẻ H2 / 6 link), bài vệ sinh laptop trượt (1 thẻ / 4 link). Chưa rõ là lỗi hệ thống hay do đặc điểm từ khóa — cần thêm vài bài mới kết luận được |
+| 10 | **Chữ chạy dần và mức suy nghĩ chưa chạy thật lần nào** | **Cao** | Đã kiểm bằng phản hồi giả (43 phép thử đúng hết) nhưng chưa gọi OpenAI thật. Việc cần làm đầu tiên phiên sau: viết 1 bài, xem chữ có chạy ra không, đọc log xem token suy nghĩ chiếm bao nhiêu % |
+| 11 | Gemini và Claude chưa có chữ chạy dần | Thấp | Chỉ OpenAI có. Hai bên kia vẫn chờ trọn bài như cũ. Làm tiếp được nếu người dùng quay lại dùng Gemini |
 
 ---
 
