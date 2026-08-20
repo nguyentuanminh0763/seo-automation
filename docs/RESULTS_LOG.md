@@ -58,8 +58,37 @@ khớp luật nào. Cần bổ sung luật phân loại chi tiết hơn trong `s
 
 | Ngày giờ | Từ khóa | Model | Số từ | Thời gian | Chi phí |
 |---|---|---|---:|---:|---|
+| 2026-08-20 09:57 | cách kiểm tra ram máy tính có bị lỗi không | **gpt-5-mini** | 2.061 | 79 giây | 3.362 vào / 7.149 ra |
+| 2026-08-20 09:54 | cách kiểm tra ram máy tính có bị lỗi không | **gpt-5-mini** | 2.387 | 72 giây | 2.911 vào / 6.881 ra |
 | 2026-08-19 17:43 | cách khắc phục loa máy tính bàn không nghe được | gemini-3.6-flash | 1.455 | ~55 giây | miễn phí |
 | 2026-08-19 17:30 | cách kiểm tra ram máy tính có bị lỗi không | gemini-3.6-flash | 1.498 | 55 giây | miễn phí |
+
+### Lần chạy thật đầu tiên bằng OpenAI gpt-5-mini (2026-08-20)
+
+Kết quả chấm bằng `writer/auditor.py` trên chính hai bài ở bảng trên:
+
+| Tiêu chí | Bài 09:54 (prompt cũ) | Bài 09:57 (prompt đã sửa) |
+|---|---|---|
+| Tổng số mục chưa đạt | 8 / 25 | **5 / 25** |
+| Thẻ H2 | **0** ❌ | **11** ✅ |
+| Số câu FAQ | **0** ❌ | **5** ✅ |
+| External link | 2 ✅ | 1 ✅ |
+| Từ khóa trong kết bài | có ✅ | có ✅ |
+| Tổng số từ | 2.387 ❌ | 2.061 ❌ |
+| SEO Title | 65 ký tự ❌ | 69 ký tự ❌ |
+
+**Phát hiện lớn nhất:** gpt-5-mini **không tự viết `##`**. Nó viết tên mục thành dòng chữ
+trơn ("Cần chuẩn bị gì", "Trả lời nhanh"), nên bài ra HTML **không có thẻ H2 nào** — vô giá
+trị về SEO dù đọc vẫn xuôi. Gemini tự suy ra được cú pháp Markdown, gpt-5-mini thì không.
+Đã thêm bảng cú pháp heading + khung bài mẫu vào `prompts/giaphongpc-tong-quat.md`; chạy lại
+ra 11 H2 và 5 FAQ. FAQ về 0 chỉ là hệ quả kéo theo: `_dem_faq()` tìm dòng `## ...FAQ...`,
+không có `##` thì không thấy khu vực FAQ.
+
+**Bài học:** prompt viết cho model này chưa chắc chạy được với model kia. Đổi nhà cung cấp
+là phải chạy lại một bài rồi soi bằng bộ kiểm tra, không được tin là "chắc cũng vậy".
+
+**Còn tồn:** gpt-5-mini viết ngắn (~2.100 từ so với chuẩn 3.000) và đếm ký tự title sai
+(tự khai 55, thật 65). Xem mục "Vấn đề đang tồn tại" trong `PROJECT_STATE.md`.
 
 ### ⚠ HẠN MỨC GÓI MIỄN PHÍ — điều quan trọng nhất cần biết
 

@@ -1,6 +1,6 @@
 # SEO Automation — Project State
 
-> **Cập nhật lần cuối:** 2026-08-20 (Bộ kiểm tra SEO + OpenAI + màn hình cấu hình)
+> **Cập nhật lần cuối:** 2026-08-20 (Chạy thật bằng OpenAI gpt-5-mini, sửa lỗi mất thẻ H2)
 > **Trạng thái tổng thể:** ✅ Cả hai công cụ đã chạy thật, ra kết quả thật, đã đẩy lên GitHub
 
 ---
@@ -29,7 +29,35 @@ Chi tiết từng lần chạy: [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md)
 
 ---
 
-## Cập nhật mới nhất — Kiểm tra SEO, OpenAI, màn hình cấu hình (2026-08-20)
+## Cập nhật mới nhất — Chạy thật bằng OpenAI, sửa lỗi mất thẻ H2 (2026-08-20)
+
+**File đã sửa:** `prompts/giaphongpc-tong-quat.md`
+
+**Đã làm:** viết thật 2 bài bằng `gpt-5-mini` và chấm bằng `writer/auditor.py`.
+Số liệu đầy đủ trong [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md).
+
+**Lỗi thật đã phát hiện — nghiêm trọng nhất từ trước tới nay về mặt SEO:**
+
+`gpt-5-mini` **không tự dùng cú pháp `##`**. Nó viết tên mục thành dòng chữ trơn, nên bài
+xuất ra HTML có **0 thẻ H2**. Bài đọc vẫn xuôi nên nhìn qua không thấy gì sai — chỉ bộ đếm
+bằng code mới lộ ra. Nếu đăng lên WordPress thì đó là một bài không có cấu trúc heading,
+gần như vô giá trị SEO.
+
+Nguyên nhân: prompt chỉ nói "bài viết dạng Markdown" và ghi "Thẻ H2: 8–12" trong bảng mục
+tiêu, không hề chỉ rõ cú pháp. Gemini tự suy ra được, gpt-5-mini thì không. Câu
+"Không dùng dấu `#` cho hai dòng mốc PHẦN 1 / PHẦN 2" nhiều khả năng còn bị hiểu rộng ra
+thành "đừng dùng `#`".
+
+Cách sửa: thêm vào PHẦN 2 của prompt một bảng cú pháp heading bắt buộc và một khung bài mẫu
+dạng khối code, kèm ghi chú rằng ngoại lệ `#` chỉ áp dụng cho đúng hai dòng mốc.
+Chạy lại: **0 H2 → 11 H2**, **0 FAQ → 5 FAQ**, số mục chưa đạt từ 8 xuống 5.
+
+**Đã xác nhận hết lỗi (mục tồn của phiên trước):** external link ✅ và từ khóa ở kết bài ✅
+đều đạt ở cả hai bài. Lời dặn siết thêm hôm 2026-08-20 đã ăn.
+
+---
+
+## Cập nhật trước đó — Kiểm tra SEO, OpenAI, màn hình cấu hình (2026-08-20)
 
 **File mới:** `writer/auditor.py`, `gui/audit_window.py`, `gui/settings_window.py`,
 `prompts/giaphongpc-tong-quat.md`, `prompts/giaphongpc-suachua.md`
@@ -156,6 +184,9 @@ Nhật ký chi tiết: [`docs/ai-journal/2026-08-19_khoi-tao-bo-cong-cu.md`](doc
 | 3 | `mua bán sửa chữa laptop quận bình thạnh` xếp nhầm vào "Khắc phục lỗi" | Thấp | Luật "sửa" chạy trước luật thương mại. Đảo thứ tự trong `LUAT_PHAN_LOAI` là xong |
 | 4 | File Excel ngày 2026-08-19 còn ~90 dòng rác casio | Thấp | Bộ lọc đã thêm sau khi file được tạo. Chạy lại sẽ sạch |
 | 5 | Google Trends chặn IP nếu chạy nhiều lần liên tiếp | Trung bình | Đã gặp thật: 1 lô bị bỏ qua lúc 15:07. Nên giãn cách ít nhất 1–2 giờ giữa các lần chạy |
+| 6 | `gpt-5-mini` viết ngắn: ~2.100 từ so với chuẩn 3.000 | Trung bình | Không phải lỗi code. Cách gỡ: đổi sang `gpt-5`, hoặc dùng ô "Yêu cầu bổ sung" đòi viết dài hơn, hoặc hạ chuẩn trong `writer/config.py` |
+| 7 | Cụm lõi từ khóa bóc chưa đủ ngắn với từ khóa dài | Trung bình | `lay_tu_khoa_loi()` cắt "cách kiểm tra ram máy tính có bị lỗi không" xuống còn 6 chữ "kiểm tra ram máy tính có bị lỗi". Đòi lặp 15–20 lần một mệnh đề 6 chữ là bất khả thi. Đo trên bài thật: cụm đó 7 lần (0,34%) nhưng "kiểm tra ram" tới 14 lần (0,68%) và có mặt ở 2 thẻ H2. Cần chốt lại cách bóc lõi — xem ghi chú bên dưới |
+| 8 | AI đếm ký tự SEO Title sai | Thấp | Tự khai 55, thật 65. Bản chất mô hình ngôn ngữ, không sửa bằng prompt được. Bộ kiểm tra đã bắt được, sửa tay trước khi đăng |
 
 ---
 

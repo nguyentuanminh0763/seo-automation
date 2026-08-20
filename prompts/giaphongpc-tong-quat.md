@@ -158,8 +158,10 @@ theo thời điểm".
 
 # ĐẦU RA
 
-Xuất đúng hai phần dưới đây. **Không dùng dấu `#` cho hai dòng mốc "PHẦN 1" và "PHẦN 2"** —
-dùng `**PHẦN n — ...**` in đậm. Dùng `#` ở đó sẽ tạo ra nhiều thẻ H1 và làm hỏng SEO của bài.
+Xuất đúng hai phần dưới đây. Riêng **hai dòng mốc "PHẦN 1" và "PHẦN 2"** thì viết in đậm
+`**PHẦN n — ...**`, không đặt dấu `#` trước chúng — đặt `#` ở đó sẽ tạo ra nhiều thẻ H1 và
+làm hỏng SEO. Ngoại lệ này **chỉ áp dụng cho đúng hai dòng mốc đó**; bên trong bài viết vẫn
+phải dùng đầy đủ `#`, `##`, `###` như quy định ở PHẦN 2.
 
 **PHẦN 1 — METADATA**
 
@@ -172,7 +174,53 @@ dùng `**PHẦN n — ...**` in đậm. Dùng `#` ở đó sẽ tạo ra nhiều
 
 **PHẦN 2 — BÀI VIẾT**
 
-Toàn văn bài viết dạng Markdown, bắt đầu bằng `# Tiêu đề`.
+Toàn văn bài viết dạng **Markdown thật**, không phải văn bản trơn.
+
+### Cú pháp heading — BẮT BUỘC, không được bỏ qua
+
+Mọi tiêu đề mục phải mở đầu bằng dấu thăng và một dấu cách. Viết tên mục thành một dòng
+chữ thường không có `##` là **sai** — bài sẽ ra HTML không có thẻ H2 nào và mất toàn bộ
+giá trị SEO. Đây là lỗi hay gặp nhất, kiểm lại trước khi trả lời.
+
+| Cấp | Cú pháp | Dùng cho | Số lượng |
+|---|---|---|---|
+| H1 | `# Tiêu đề bài` | Đúng một dòng, ngay đầu PHẦN 2 | 1 |
+| H2 | `## Tên mục lớn` | Mỗi mục lớn của bài, kể cả Trả lời nhanh / FAQ / Checklist / Kết luận | 8–12 |
+| H3 | `### Ý nhỏ` | Tách ý bên trong một H2, và mỗi câu hỏi FAQ | tùy ý |
+
+Khung tối thiểu phải có, đúng dạng này:
+
+```
+# {keyword} — <phần mở rộng của tiêu đề>
+
+<đoạn mở bài>
+
+## Trả lời nhanh
+
+<40–60 từ trả lời thẳng>
+
+## Mục lục
+
+<danh sách gạch đầu dòng>
+
+## <mục nội dung 1>
+...
+## <mục nội dung n>
+
+## FAQ — Câu hỏi thường gặp
+
+### <câu hỏi 1>
+<trả lời>
+### <câu hỏi 2>
+...
+
+## Checklist trước khi mang máy đi sửa
+
+## Kết luận
+```
+
+Dòng `## FAQ — Câu hỏi thường gặp` phải viết đúng cấp H2 và phải chứa chữ "FAQ" hoặc
+"câu hỏi thường gặp", vì công cụ dựa vào dòng này để tìm và đếm khu vực FAQ.
 
 Không viết thêm phần tự kiểm tra ở cuối bài — công cụ sẽ tự đo bằng code và đối chiếu
 với các mục tiêu ở trên. Bạn tập trung viết cho hay, phần đếm để máy lo.
