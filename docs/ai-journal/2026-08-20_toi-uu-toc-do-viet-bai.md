@@ -141,3 +141,64 @@ Bốn phép thử đầu tiên **báo đỏ**, nhưng soi ra là **test sai ch�
 
 Ba con số cần lấy khi chạy: chữ có chạy ra không, token suy nghĩ chiếm bao nhiêu phần trăm,
 và hạ mức xuống `low` thì nhanh hơn bao nhiêu mà điểm SEO có tụt không.
+
+---
+
+# Phần hai — làm nốt cho Gemini
+
+Người dùng hỏi lại: *"tại sao chữ chạy dần chỉ áp dụng với OpenAI vậy"*.
+
+Câu hỏi đúng chỗ, và câu trả lời trước của tôi dễ gây hiểu nhầm. Chữ chạy dần **không phải
+tính năng riêng của OpenAI** — cả ba nhà cung cấp đều có. Nó chỉ chạy với OpenAI vì tôi chỉ
+viết code cho OpenAI.
+
+Lý do lúc đó: khi người dùng phàn nàn, `.env` đang để `openai` với `gpt-5-mini`, và mọi số
+đo đều là của OpenAI. Nhưng giữa hai lần chạy họ đã tự đổi `.env` sang `gemini` — nghĩa là ở
+trạng thái thực tế họ **không nhận được cái vừa làm**. Đây là chỗ tôi thu hẹp phạm vi hụt.
+
+## Vì sao không dùng chung được một hàm
+
+Cùng một ý tưởng nhưng khác nhau ở bốn chỗ, chỗ nào cũng đủ để hàm cũ đọc ra bài rỗng:
+
+| | OpenAI | Gemini |
+|---|---|---|
+| Bật bằng | tham số `stream: true` | **địa chỉ khác hẳn** `:streamGenerateContent?alt=sse` |
+| Chữ nằm ở | `choices[].delta.content` | `candidates[].content.parts[].text` |
+| Báo hết | dòng `data: [DONE]` | không có gì, dòng chảy chỉ dừng |
+| Token suy nghĩ | `reasoning_tokens` | `thoughtsTokenCount` |
+
+Chỗ khác nhau đáng nói nhất là cách bật: OpenAI thêm một tham số vào thân yêu cầu, Gemini
+đổi hẳn địa chỉ. Nên phần lùi về cách cũ khi bị chặn cũng phải viết khác.
+
+## Một bẫy riêng của Gemini
+
+Model đời mới trả về cả những phần đánh dấu `"thought": true` — đó là **tóm tắt suy nghĩ**
+của model, không phải nội dung bài. Nếu cứ thấy `text` là ghép vào thì bài sẽ lẫn một mớ
+"Người dùng muốn biết cách kiểm tra RAM, tôi nên bắt đầu bằng..." giữa các đoạn.
+
+Viết `_boc_chu()` lọc bỏ chúng, và cho **cả hai cách đọc dùng chung hàm này**. Nếu để hai
+chỗ tự lọc riêng thì sớm muộn cũng lệch nhau — đúng loại lỗi đã gặp ở cửa sổ kiểm tra SEO
+sáng nay, khi bảng điểm đếm theo cụm lõi còn tab "Câu cần sửa" đếm theo nguyên từ khóa.
+
+## Kiểm chứng — 19 phép thử, vẫn 0 đồng
+
+Dựng phản hồi SSE giả kiểu Gemini cho chạy qua hàm thật. Ngoài những thứ đã kiểm với OpenAI
+(ghép mẩu, dấu tiếng Việt, gói vỡ, bấm Dừng), thêm bốn thứ riêng của Gemini:
+
+- Phần `thought` **không lọt vào bài** và cũng không gọi callback
+- Model không trả `thoughtsTokenCount` thì để 0, bài vẫn ra bình thường — có báo cáo thật
+  rằng `gemini-3-flash-preview` bỏ trống trường này dù đã bật suy nghĩ
+- Ba lý do dừng `MAX_TOKENS` / `SAFETY` / không rõ ra ba câu tiếng Việt khác nhau
+- Lỗi "sai tên model" **không bị nhầm** thành lỗi chữ chạy dần rồi lùi về cách cũ vô ích
+
+Thêm một phép thử quan trọng: hai cách đọc (chạy dần / chờ trọn bài) phải cho ra **cùng một
+bộ số**. Chạy lại cả bộ kiểm OpenAI để chắc không làm hồi quy — vẫn đúng.
+
+## Còn lại
+
+**Claude vẫn chưa có.** `ANTHROPIC_API_KEY` đang để trống, không kiểm chứng được. Viết code
+không chạy thử được là đúng thứ `CLAUDE_RULES.md` cấm, nên để nguyên.
+
+**Mức suy nghĩ vẫn chỉ OpenAI chỉnh được.** Gemini dùng `thinkingLevel`, Claude dùng
+`effort` — và với Claude còn một cái bẫy: `thinking.budget_tokens` đã bị khai tử ở 4.6 và bị
+từ chối thẳng từ 4.7 trở lên, trong khi mặc định của dự án là `claude-opus-5`.

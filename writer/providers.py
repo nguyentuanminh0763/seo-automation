@@ -74,19 +74,23 @@ class NhaCungCapGemini:
     def __init__(self, st: Settings):
         self.st = st
 
+    _tat_dong_chay = False
+
     def viet_bai(self, prompt: str, nen_dung=None, khi_co_chu=None) -> KetQua:
         """
         Gọi Gemini, tự thử lại khi model quá tải.
 
-        Nhận `khi_co_chu` cho cùng chữ ký với các nhà cung cấp khác nhưng KHÔNG
-        dùng tới — Gemini chưa làm chữ chạy dần. Người dùng Gemini vẫn chờ trọn
-        bài như trước, không tệ hơn nhưng cũng không nhanh hơn.
+        Tham số:
+            khi_co_chu : hàm nhận từng mẩu chữ trong lúc model đang viết, để
+                         giao diện hiện chữ chạy dần.
+
+                         ⚠ Chạy ở LUỒNG NỀN — chỉ được đẩy vào hàng đợi, tuyệt
+                         đối không đụng tkinter.
 
         Gói miễn phí dùng chung tài nguyên với rất nhiều người nên hay gặp
         503 "high demand" — lỗi tạm thời, chờ vài giây là qua. Đã gặp thật
         khi test, nên tự thử lại thay vì bắt người dùng bấm đi bấm lại.
         """
-        url = f"{URL_GEMINI}/models/{self.st.model}:generateContent"
         than_yeu_cau = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"maxOutputTokens": self.st.max_tokens},
@@ -95,6 +99,13 @@ class NhaCungCapGemini:
         for lan_thu in range(1, SO_LAN_THU_LAI + 1):
             if nen_dung is not None and nen_dung():
                 raise LoiGoiAI("Đã dừng theo yêu cầu.")
+
+            # Gemini không bật chữ chạy dần bằng một tham số trong thân yêu cầu
+            # như OpenAI, mà bằng một ĐỊA CHỈ khác hẳn.
+            dong_chay = not self._tat_dong_chay
+            url = (f"{URL_GEMINI}/models/{self.st.model}:streamGenerateContent?alt=sse"
+                   if dong_chay else
+                   f"{URL_GEMINI}/models/{self.st.model}:generateContent")
 
             try:
                 phan_hoi = requests.post(
@@ -105,6 +116,7 @@ class NhaCungCapGemini:
                     },
                     json=than_yeu_cau,
                     timeout=self.st.timeout,
+                    stream=dong_chay,
                 )
             except requests.Timeout:
                 raise LoiGoiAI(
@@ -115,7 +127,17 @@ class NhaCungCapGemini:
                 raise LoiGoiAI(f"Không kết nối được tới Google: {loi}") from None
 
             if phan_hoi.status_code == 200:
+                if dong_chay:
+                    return self._doc_dong_chay(phan_hoi, nen_dung, khi_co_chu)
                 return self._doc_ket_qua(phan_hoi.json())
+
+            # Địa chỉ chữ chạy dần không dùng được thì quay về cách cũ rồi thử
+            # lại: chờ lâu hơn còn hơn không viết được bài nào.
+            if dong_chay and self._bi_cam_dong_chay(phan_hoi):
+                self._tat_dong_chay = True
+                log.warning("Model này không cho nhận chữ chạy dần. "
+                            "Chuyển sang chờ trọn bài rồi hiện một lần.")
+                continue
 
             # Chỉ thử lại với lỗi TẠM THỜI. Sai key hay sai tên model thì có
             # thử bao nhiêu lần cũng vậy, báo ngay cho người dùng biết.
@@ -145,8 +167,69 @@ class NhaCungCapGemini:
 
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _boc_chu(ung_vien: dict) -> str:
+        """
+        Lấy phần chữ của bài ra khỏi một ứng viên.
+
+        Bỏ những phần đánh dấu `thought` — đó là tóm tắt suy nghĩ của model đời
+        mới, không phải nội dung bài. Nhét chúng vào bài là ra một mớ lộn xộn.
+        """
+        cac_phan = (ung_vien.get("content") or {}).get("parts") or []
+        return "".join(p.get("text", "") for p in cac_phan if not p.get("thought"))
+
+    def _doc_dong_chay(self, phan_hoi, nen_dung, khi_co_chu) -> KetQua:
+        """
+        Ghép bài từ dòng chữ chạy dần của Gemini.
+
+        Khác OpenAI ở ba chỗ, nên không dùng chung hàm được:
+            - chữ nằm ở candidates[].content.parts[].text, không phải delta.content
+            - KHÔNG có dòng `data: [DONE]` báo hết, dòng chảy chỉ đơn giản là dừng
+            - số token nằm ở usageMetadata, tên trường cũng khác
+        """
+        # requests đoán bảng mã từ header; đoán trượt là vỡ hết dấu tiếng Việt.
+        phan_hoi.encoding = "utf-8"
+
+        manh: List[str] = []
+        thong_ke: dict = {}
+        ly_do_dung = ""
+
+        try:
+            for dong in phan_hoi.iter_lines(decode_unicode=True):
+                if nen_dung is not None and nen_dung():
+                    raise LoiGoiAI("Đã dừng theo yêu cầu.")
+                if not dong or not dong.startswith("data:"):
+                    continue
+
+                try:
+                    du_lieu = json.loads(dong[5:].strip())
+                except ValueError:
+                    continue        # gói vỡ giữa chừng -> bỏ, đừng làm sập bài
+
+                if du_lieu.get("usageMetadata"):
+                    thong_ke = du_lieu["usageMetadata"]
+
+                for ung_vien in du_lieu.get("candidates") or []:
+                    phan = self._boc_chu(ung_vien)
+                    if phan:
+                        manh.append(phan)
+                        if khi_co_chu is not None:
+                            khi_co_chu(phan)
+                    if ung_vien.get("finishReason"):
+                        ly_do_dung = ung_vien["finishReason"]
+        except requests.RequestException as loi:
+            raise LoiGoiAI(f"Đứt kết nối giữa chừng: {loi}") from None
+        finally:
+            phan_hoi.close()
+
+        noi_dung = "".join(manh).strip()
+        if not noi_dung:
+            raise LoiGoiAI(self._loi_bai_rong(ly_do_dung))
+
+        return self._dung_ket_qua(noi_dung, thong_ke)
+
     def _doc_ket_qua(self, du_lieu: dict) -> KetQua:
-        """Bóc nội dung bài viết ra khỏi JSON Gemini trả về."""
+        """Bóc nội dung bài viết ra khỏi JSON Gemini trả về (cách cũ, chờ trọn bài)."""
         cac_ung_vien = du_lieu.get("candidates") or []
         if not cac_ung_vien:
             raise LoiGoiAI(
@@ -155,25 +238,46 @@ class NhaCungCapGemini:
             )
 
         ung_vien = cac_ung_vien[0]
-        cac_phan = (ung_vien.get("content") or {}).get("parts") or []
-        noi_dung = "".join(p.get("text", "") for p in cac_phan).strip()
+        noi_dung = self._boc_chu(ung_vien).strip()
 
         if not noi_dung:
-            ly_do = ung_vien.get("finishReason", "không rõ")
-            if ly_do == "MAX_TOKENS":
-                raise LoiGoiAI(
-                    "Bài viết bị cắt ngay từ đầu vì chạm giới hạn độ dài.\n"
-                    "Tăng MAX_TOKENS trong file .env."
-                )
-            raise LoiGoiAI(f"Gemini trả về rỗng (lý do: {ly_do}).")
+            raise LoiGoiAI(self._loi_bai_rong(ung_vien.get("finishReason", "")))
 
-        thong_ke = du_lieu.get("usageMetadata") or {}
+        return self._dung_ket_qua(noi_dung, du_lieu.get("usageMetadata") or {})
+
+    def _dung_ket_qua(self, noi_dung: str, thong_ke: dict) -> KetQua:
+        """
+        Gói kết quả. Dùng chung cho cả hai cách đọc để số liệu luôn khớp nhau.
+
+        ⚠ `thoughtsTokenCount` có model trả có model không — đã có báo cáo lỗi
+        là gemini-3-flash-preview bỏ trống trường này dù đã bật suy nghĩ. Thiếu
+        thì để 0, không phải lỗi của công cụ.
+        """
         return KetQua(
             noi_dung=noi_dung,
             model=self.st.model,
             token_vao=thong_ke.get("promptTokenCount", 0),
             token_ra=thong_ke.get("candidatesTokenCount", 0),
+            token_suy_nghi=thong_ke.get("thoughtsTokenCount", 0),
         )
+
+    @staticmethod
+    def _loi_bai_rong(ly_do: str) -> str:
+        if ly_do == "MAX_TOKENS":
+            return ("Bài viết bị cắt ngay từ đầu vì chạm giới hạn độ dài.\n"
+                    "Tăng MAX_TOKENS trong màn hình Cấu hình AI.")
+        if ly_do == "SAFETY":
+            return ("Bộ lọc an toàn của Google chặn bài này.\n"
+                    "Thử sửa lại prompt cho trung tính hơn.")
+        return f"Gemini trả về rỗng (lý do: {ly_do or 'không rõ'})."
+
+    @staticmethod
+    def _bi_cam_dong_chay(phan_hoi) -> bool:
+        try:
+            tb = phan_hoi.json().get("error", {}).get("message", "").lower()
+        except (ValueError, json.JSONDecodeError):
+            return False
+        return "stream" in tb
 
     def _giai_thich_loi(self, phan_hoi) -> str:
         """Đổi mã lỗi HTTP thành câu tiếng Việt kèm cách xử lý."""

@@ -81,9 +81,12 @@ def viet_bai(keyword: str,
     # nào. Ghi ra để biết có đáng hạ mức suy nghĩ trong Cấu hình AI hay không.
     if ket_qua.token_suy_nghi:
         phan_tram = ket_qua.token_suy_nghi / ket_qua.token_ra * 100 if ket_qua.token_ra else 0
+        # Chỉ OpenAI mới có ô chỉnh mức suy nghĩ trong Cấu hình AI. Mách nước
+        # cho người dùng Gemini đi tìm một ô không tồn tại là làm họ mất công.
+        cach_go = (" Muốn nhanh hơn thì hạ 'Mức suy nghĩ' ở Cấu hình AI."
+                   if st.nha_cung_cap == "openai" else "")
         log.info("Trong đó %s token là AI tự nghĩ (%.0f%%) — phần này không nằm "
-                 "trong bài. Muốn nhanh hơn thì hạ 'Mức suy nghĩ' ở Cấu hình AI.",
-                 f"{ket_qua.token_suy_nghi:,}", phan_tram)
+                 "trong bài.%s", f"{ket_qua.token_suy_nghi:,}", phan_tram, cach_go)
 
     if so_cho_trong:
         log.warning("Bài còn %d chỗ cần bạn điền số liệu thật trước khi đăng.",

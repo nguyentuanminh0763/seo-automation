@@ -63,8 +63,25 @@ chạy thật thì không được phép đổi ngầm.
 **Hai lưới an toàn** vì không chạy thật được: tài khoản/model bị cấm chữ chạy dần thì tự tắt
 rồi thử lại; gói SSE vỡ giữa chừng thì bỏ qua gói đó chứ không làm sập bài.
 
-**Chỉ OpenAI có chữ chạy dần.** Gemini và Claude nhận tham số cho đồng bộ chữ ký nhưng bỏ
-qua — vẫn chờ trọn bài như trước, không tệ hơn nhưng cũng không nhanh hơn.
+**Bổ sung ngay sau đó: Gemini cũng có chữ chạy dần.** Bản đầu chỉ làm cho OpenAI vì lúc đó
+`.env` đang để OpenAI, nhưng người dùng đã tự đổi sang Gemini nên hóa ra không nhận được gì.
+
+Không dùng chung hàm với OpenAI được, vì khác nhau ở ba chỗ:
+
+| | OpenAI | Gemini |
+|---|---|---|
+| Bật bằng | tham số `stream: true` trong thân yêu cầu | **địa chỉ khác hẳn**: `:streamGenerateContent?alt=sse` |
+| Chữ nằm ở | `choices[].delta.content` | `candidates[].content.parts[].text` |
+| Báo hết | dòng `data: [DONE]` | không có gì, dòng chảy chỉ dừng |
+| Token suy nghĩ | `reasoning_tokens` | `thoughtsTokenCount` |
+
+**Một bẫy riêng của Gemini:** model đời mới trả về cả những phần đánh dấu `thought` — đó là
+tóm tắt suy nghĩ, không phải nội dung bài. Nhét vào bài là ra một mớ lộn xộn. `_boc_chu()`
+lọc bỏ chúng, và cả hai cách đọc (chạy dần / chờ trọn bài) đều dùng chung hàm lọc này nên
+không thể lệch nhau.
+
+**Claude vẫn chưa có.** `ANTHROPIC_API_KEY` đang để trống nên không kiểm chứng được —
+viết code không chạy thử được là đúng thứ `CLAUDE_RULES.md` cấm.
 
 **Kiểm chứng — 24 + 19 phép thử, không tốn một đồng API nào:**
 dựng phản hồi SSE giả cho đi qua đúng hàm `_doc_dong_chay()` thật (ghép mẩu, giữ dấu tiếng
@@ -293,8 +310,9 @@ Nhật ký chi tiết: [`docs/ai-journal/2026-08-19_khoi-tao-bo-cong-cu.md`](doc
 | 7 | `BANG_GIA` chưa có đơn giá OpenAI | Thấp | Ô chi phí chỉ hiện số token, không hiện tiền. Điền đơn giá từ trang billing của OpenAI vào `writer/config.py` |
 | 8 | Mỗi model mới chạy đúng 1 bài | Trung bình | Đủ để kết luận "không cần đổi sang gpt-5", chưa đủ để xếp hạng model. Muốn chắc thì chạy thêm 3–5 từ khóa khác nhau |
 | 9 | Từ khóa trong H2 và internal link chưa ổn định | Thấp | Bài RAM đạt (4 thẻ H2 / 6 link), bài vệ sinh laptop trượt (1 thẻ / 4 link). Chưa rõ là lỗi hệ thống hay do đặc điểm từ khóa — cần thêm vài bài mới kết luận được |
-| 10 | **Chữ chạy dần và mức suy nghĩ chưa chạy thật lần nào** | **Cao** | Đã kiểm bằng phản hồi giả (43 phép thử đúng hết) nhưng chưa gọi OpenAI thật. Việc cần làm đầu tiên phiên sau: viết 1 bài, xem chữ có chạy ra không, đọc log xem token suy nghĩ chiếm bao nhiêu % |
-| 11 | Gemini và Claude chưa có chữ chạy dần | Thấp | Chỉ OpenAI có. Hai bên kia vẫn chờ trọn bài như cũ. Làm tiếp được nếu người dùng quay lại dùng Gemini |
+| 10 | **Chữ chạy dần và mức suy nghĩ chưa chạy thật lần nào** | **Cao** | Đã kiểm bằng phản hồi giả (62 phép thử đúng hết, cả OpenAI lẫn Gemini) nhưng chưa gọi API thật lần nào. Việc đầu tiên phiên sau: viết 1 bài, xem chữ có chạy ra không, đọc log xem token suy nghĩ chiếm bao nhiêu % |
+| 11 | Claude chưa có chữ chạy dần | Thấp | OpenAI và Gemini đã có. Claude thì `ANTHROPIC_API_KEY` đang trống nên không kiểm chứng được — chưa làm |
+| 12 | Chỉ OpenAI chỉnh được mức suy nghĩ | Thấp | Gemini dùng `thinkingLevel`, Claude dùng `effort` — tên và cách gọi khác hẳn, chưa làm. Riêng việc ĐỌC số token suy nghĩ thì Gemini đã có |
 
 ---
 
