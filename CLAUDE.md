@@ -15,8 +15,10 @@ Dự án: **SEO Automation cho giaphongpc.vn** — hai công cụ Python thu th�
 - Python **không nằm trong PATH**: `C:\Users\PC\AppData\Local\Programs\Python\Python312\python.exe`
 - Git phải dùng remote **HTTPS** (khóa SSH trên máy thuộc tài khoản khác, không có quyền ghi).
 - Thư mục `output/` **không bao giờ commit** — repo public, đó là dữ liệu kinh doanh.
-- **Không báo "đã xong" khi chưa chạy thật.** Dự án này đã có 4 lỗi chỉ lộ ra khi chạy.
+- **Không báo "đã xong" khi chưa chạy thật.** Dự án này đã có hơn 15 lỗi chỉ lộ ra khi chạy thật.
 - Giao diện: luồng nền **không được** gọi hàm tkinter nào, kể cả `after()`.
+- Đếm số liệu bài viết bằng **code**, không hỏi AI — nó đếm sai 50–60%.
+- Gemini free: **20 lượt/ngày mỗi model**, đổi model là có hạn mức mới.
 
 ## Sau khi thay đổi
 

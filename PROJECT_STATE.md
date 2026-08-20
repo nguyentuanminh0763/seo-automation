@@ -1,6 +1,6 @@
 # SEO Automation — Project State
 
-> **Cập nhật lần cuối:** 2026-08-19 (Khởi tạo dự án + 2 công cụ hoàn chỉnh)
+> **Cập nhật lần cuối:** 2026-08-20 (Bộ kiểm tra SEO + OpenAI + màn hình cấu hình)
 > **Trạng thái tổng thể:** ✅ Cả hai công cụ đã chạy thật, ra kết quả thật, đã đẩy lên GitHub
 
 ---
@@ -29,7 +29,37 @@ Chi tiết từng lần chạy: [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md)
 
 ---
 
-## Cập nhật mới nhất — Công cụ viết bài bằng AI (2026-08-19)
+## Cập nhật mới nhất — Kiểm tra SEO, OpenAI, màn hình cấu hình (2026-08-20)
+
+**File mới:** `writer/auditor.py`, `gui/audit_window.py`, `gui/settings_window.py`,
+`prompts/giaphongpc-tong-quat.md`, `prompts/giaphongpc-suachua.md`
+
+**Đã làm:**
+- **Bộ đếm SEO bằng code** thay cho bảng AI tự khai. Đo thật: AI khai 3.682 từ /
+  17 lần từ khóa trong khi số thật là 5.876 / 26 — sai 50–60%.
+- **Prompt tự nhận diện ý định** từ khóa (6 nhóm A–F) rồi chọn khung bài. Đúng 4/4 khi thử.
+- **Thêm nhà cung cấp OpenAI** (REST, không cần thư viện mới).
+- **Màn hình Cấu hình AI** — nhập key, chọn model, kiểm tra kết nối ngay trong app,
+  không phải sửa `.env` bằng tay nữa.
+
+**Lỗi đã phát hiện và sửa (tất cả đều của tôi, chỉ lộ khi chạy thật):**
+
+| Lỗi | Hậu quả |
+|---|---|
+| `<[^>]+>` khớp dấu `<` trong "Delta E < 2" | Nuốt 75% bài viết khi đếm |
+| Xóa nguyên dòng bảng | Bài về giá/so sánh mất phần lớn nội dung |
+| Đếm từ và đếm từ khóa khác cơ sở | Mật độ ra 6,17% thay vì 1,18% |
+| `NFD` không tách được chữ `đ` | Mọi từ khóa có `đ` bóc cụm lõi sai |
+| Đếm nguyên cụm câu hỏi | "cpu hàng tray là gì" 12 lần vs lõi 38 lần |
+| Cửa sổ kết bài 200 từ | Không chạm tới kết luận thật (CTA chiếm 200 từ cuối) |
+| Retry 8s/16s khi hết hạn mức ngày | Đốt thêm lượt vô ích |
+
+**Phát hiện vận hành quan trọng:** Gemini free giới hạn **20 lượt/ngày cho MỖI model**.
+Hạn mức tính riêng từng model nên xoay vòng 5 model được ~100 lượt/ngày.
+
+---
+
+## Cập nhật trước đó — Công cụ viết bài bằng AI (2026-08-19)
 
 Thêm tab thứ ba: dán từ khóa → AI viết bài → copy dán thẳng vào WordPress.
 
