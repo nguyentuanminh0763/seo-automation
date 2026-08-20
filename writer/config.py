@@ -97,8 +97,15 @@ CHUAN_SEO = {
     "so_h2_toi_da": 12,
     "tu_khoa_min": 15,
     "tu_khoa_max": 20,
+    # Nới trần từ 0,55% lên 0,80% sau khi sửa cách bóc cụm lõi (2026-08-20).
+    # Hai lý do, cả hai đều đo được:
+    #   1. Trần cũ mâu thuẫn với chính "tu_khoa_min/max" ở trên. 15–20 lần trên
+    #      một bài 2.500 từ là 0,60–0,80% — vượt trần cũ dù số lần vẫn đúng chuẩn.
+    #      Không bài nào đạt được cả hai mục cùng lúc.
+    #   2. Ba bài thật, chấm bằng cụm lõi mới: 0,55% · 0,68% · 0,78%.
+    # Sàn giữ ở 0,40% vì 15 lần trên bài 4.000 từ (dài nhất theo chuẩn) là 0,375%.
     "mat_do_min": 0.40,          # phần trăm
-    "mat_do_max": 0.55,
+    "mat_do_max": 0.80,
     "h2_chua_tu_khoa_min": 3,
     "title_toi_da": 60,          # ký tự
     "meta_min": 140,

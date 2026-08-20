@@ -10,7 +10,6 @@ cụ thể, và những câu có vấn đề được trích nguyên văn để 
 import tkinter as tk
 from tkinter import ttk
 
-from writer import auditor
 from writer.auditor import (CAN_NGUOI_KIEM, CHUA_DAT, DAT, KHONG_AP_DUNG,
                             BaoCaoKiemTra)
 
@@ -63,8 +62,10 @@ class CuaSoKiemTra(tk.Toplevel):
 
         so_tay.add(self._trang_bang(so_tay), text="  Bảng kiểm tra  ")
 
-        cau_nhoi = auditor.tim_cau_nhoi_tu_khoa(self.noi_dung, self.tu_khoa)
-        so_bia = auditor.tim_so_lieu_nghi_bia(self.noi_dung)
+        # Lấy thẳng từ báo cáo chứ không đếm lại: bảng điểm chấm theo CỤM LÕI,
+        # đếm lại bằng nguyên từ khóa sẽ ra danh sách ngắn hơn con số đã hiện.
+        cau_nhoi = b.cau_nhoi
+        so_bia = b.so_lieu_nghi_bia
         so_tay.add(
             self._trang_cau(so_tay, cau_nhoi, so_bia),
             text=f"  Câu cần sửa ({len(cau_nhoi) + len(so_bia)})  ",

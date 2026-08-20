@@ -112,6 +112,82 @@ không người viết SEO nào làm. Đo trên bài thật:
 
 Nghĩa là bài viết không tệ như bảng điểm nói — cái thước đo mới là thứ cần chỉnh. Đây cùng
 một họ lỗi với cái đã sửa lần trước ("đếm nguyên cụm câu hỏi"), chỉ là lần này bóc chưa
-đủ tay. Nhưng sửa nó là đổi cách chấm điểm của toàn bộ bài, nên để người dùng chốt.
+đủ tay. Nhưng sửa nó là đổi cách chấm điểm của toàn bộ bài, nên hỏi người dùng trước.
 
-Ghi vào mục "Vấn đề đang tồn tại" số 6, 7, 8 trong `PROJECT_STATE.md`.
+---
+
+# Phần hai — sửa cách chấm mật độ, và so gpt-5 với gpt-5-mini
+
+Người dùng chốt hai việc: bóc cụm lõi ngắn hơn, và chạy thử một bài bằng `gpt-5` để so.
+
+## Bóc cụm lõi: quy tắc vị trí không cứu được
+
+Ý đầu tiên là cắt cứng lấy 3 chữ đầu sau khi bóc chữ hỏi. Đo thử trên ba bài thật thì hỏng
+ngay — chỗ đắt của từ khóa không cố định ở đầu:
+
+| Từ khóa | 3 chữ đầu | Cụm bài thực sự bám vào |
+|---|---|---|
+| cách kiểm tra ram máy tính có bị lỗi không | kiểm tra ram ✅ | `kiểm tra ram` — 14 lần |
+| cách khắc phục loa máy tính bàn không nghe được | khắc phục loa ❌ 2 lần | `máy tính bàn` — 8 lần |
+| máy tính bị lỗi màn hình xanh recovery | máy tính bị ❌ | `màn hình xanh` — 19 lần |
+
+Nên bỏ hẳn ý đoán theo vị trí. Cách làm cuối cùng: **xét mọi cụm 3 chữ liền nhau trong từ
+khóa, chọn cụm được chính bài dùng nhiều nhất**. Đó là đo cái người viết thật sự bám vào,
+chứ không phải đoán xem đáng lẽ họ phải bám vào cái gì.
+
+Hàm nhận thêm tham số `noi_dung` để mặc định trống — bỏ trống thì vẫn bóc chữ hỏi rồi lấy
+3 chữ đầu như cũ, để chỗ nào gọi mà chưa có bài vẫn chạy được.
+
+Chạy lại ca cũ để chắc không làm hỏng cái đã sửa lần trước: `"cpu hàng tray là gì"` vẫn ra
+`"cpu hàng tray"` ✅.
+
+## Nới trần mật độ — vì hai chuẩn tự mâu thuẫn với nhau
+
+Bóc lõi đúng rồi thì hai trong ba bài lại vượt trần 0,55%. Nhìn kỹ mới thấy hai dòng chuẩn
+nằm cạnh nhau trong `config.py` **không bao giờ đúng đồng thời được**:
+
+- `tu_khoa_min/max = 15–20 lần`
+- `mat_do_min/max = 0,40–0,55%`
+
+15–20 lần trên một bài 2.500 từ là 0,60–0,80%. Đạt mục trên thì trượt mục dưới, và ngược
+lại. Đã nới trần lên 0,80%, giữ nguyên sàn 0,40% (15 lần trên bài 4.000 từ là 0,375%).
+
+Đây đúng là điều người dùng nghi từ phiên trước — nhưng lệch **cả hai chiều**, không phải
+một chiều như dự đoán ban đầu: từ khóa dài thì tụt dưới sàn, từ khóa ngắn thì vượt trần.
+
+## Một chỗ lệch tìm thấy trên đường đi
+
+`gui/audit_window.py` gọi `tim_cau_nhoi_tu_khoa(noi_dung, self.tu_khoa)` với **nguyên** từ
+khóa, trong khi `kiem_tra()` chấm bằng **cụm lõi**. Nghĩa là tab "Câu cần sửa" liệt kê một
+danh sách còn bảng điểm hiện một con số khác. Bóc lõi ngắn hơn chỉ làm khoảng lệch rộng ra.
+
+Sửa bằng cách cho `BaoCaoKiemTra` mang sẵn `cau_nhoi` và `so_lieu_nghi_bia`, cửa sổ chỉ đọc
+chứ không đếm lại. Bỏ luôn dòng `import auditor` đã thành thừa.
+
+## gpt-5 so với gpt-5-mini
+
+Chấm lại cả hai bài bằng thước đo mới:
+
+| | gpt-5-mini | gpt-5 |
+|---|---|---|
+| Điểm | **21 đạt / 4 chưa** | 19 đạt / 6 chưa |
+| Số từ | 2.061 | 2.460 |
+| Thời gian | 79 giây | 125 giây |
+| Token ra | 7.149 | 8.474 |
+
+Ngoài dự đoán: `gpt-5` chấm **thấp hơn**. Và mấy mục nó trượt lại nặng hơn — thiếu hẳn khối
+author bio, bịa một số liệu — trong khi mini chỉ trượt mấy mục hình thức. Chậm gần gấp đôi
+và đắt hơn nhiều lần mỗi bài. Kết luận: không có lý do gì phải đổi.
+
+Nhưng mỗi model mới chạy **một bài**. Đủ để nói "đừng đổi", chưa đủ để nói "mini tốt hơn".
+
+Điểm chung đáng chú ý hơn: **cả hai đều không đạt 3.000 từ**. Cùng thiếu như nhau thì thủ
+phạm nhiều khả năng là prompt chưa ép đủ mạnh về độ dài, không phải model.
+
+## Kiểm chứng cuối
+
+- `compileall` sạch, import toàn bộ `gui/` + `writer/` không lỗi
+- Dựng thật `CuaSoKiemTra` bằng tkinter rồi `update()` — cửa sổ lên được, không sập
+- Danh sách trong tab "Câu cần sửa" nay khớp đúng con số ở bảng điểm (0 câu / 1 chỗ)
+
+Ghi vào mục "Vấn đề đang tồn tại" số 6–9 trong `PROJECT_STATE.md`.

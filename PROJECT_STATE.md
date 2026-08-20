@@ -55,6 +55,35 @@ Chạy lại: **0 H2 → 11 H2**, **0 FAQ → 5 FAQ**, số mục chưa đạt t
 **Đã xác nhận hết lỗi (mục tồn của phiên trước):** external link ✅ và từ khóa ở kết bài ✅
 đều đạt ở cả hai bài. Lời dặn siết thêm hôm 2026-08-20 đã ăn.
 
+### Sửa tiếp: cách chấm mật độ từ khóa
+
+**File đã sửa:** `writer/auditor.py`, `writer/config.py`, `gui/audit_window.py`
+
+`lay_tu_khoa_loi()` bóc cụm lõi chưa đủ tay với từ khóa dài. "cách kiểm tra ram máy tính có
+bị lỗi không" ra "kiểm tra ram máy tính có bị lỗi" — một mệnh đề sáu chữ. Đòi lặp nó 15–20
+lần và nhét vào ba thẻ H2 là điều không người viết SEO nào làm, nên bảng điểm báo đỏ oan.
+
+Cắt cứng 3 chữ đầu cũng không xong, vì chỗ đắt của từ khóa không cố định ở đầu. Đo ba bài:
+
+| Từ khóa | Cụm bài thực sự bám vào | Nằm ở |
+|---|---|---|
+| cách kiểm tra ram máy tính có bị lỗi không | `kiểm tra ram` | đầu |
+| cách khắc phục loa máy tính bàn không nghe được | `máy tính bàn` | giữa |
+| máy tính bị lỗi màn hình xanh recovery | `màn hình xanh` | cuối |
+
+Cách mới: xét mọi cụm **3 chữ liền nhau** trong từ khóa, chọn cụm được **bài dùng nhiều
+nhất**. Kết quả trên ba bài: 0,68% · 0,55% · 0,78% — đều là con số hợp lý.
+
+Kéo theo phải **nới trần mật độ 0,55% → 0,80%**. Trần cũ mâu thuẫn với chính chuẩn "15–20
+lần" ngay bên trên nó: 15–20 lần trên bài 2.500 từ là 0,60–0,80%, không bài nào đạt được cả
+hai mục cùng lúc. Đây chính là nghi ngờ "chuẩn mật độ quá chặt" đã nêu từ phiên trước —
+xác nhận là đúng, nhưng lệch cả hai chiều: từ khóa **dài** tụt dưới sàn, từ khóa **ngắn**
+vượt trần.
+
+Tiện thể sửa một chỗ lệch trong cửa sổ kết quả: tab "Câu cần sửa" tự đếm lại bằng **nguyên**
+từ khóa trong khi bảng điểm chấm theo **cụm lõi**, nên số câu liệt kê không khớp con số
+hiển thị. Nay báo cáo mang sẵn hai danh sách đó, cửa sổ chỉ việc đọc.
+
 ---
 
 ## Cập nhật trước đó — Kiểm tra SEO, OpenAI, màn hình cấu hình (2026-08-20)
@@ -184,9 +213,10 @@ Nhật ký chi tiết: [`docs/ai-journal/2026-08-19_khoi-tao-bo-cong-cu.md`](doc
 | 3 | `mua bán sửa chữa laptop quận bình thạnh` xếp nhầm vào "Khắc phục lỗi" | Thấp | Luật "sửa" chạy trước luật thương mại. Đảo thứ tự trong `LUAT_PHAN_LOAI` là xong |
 | 4 | File Excel ngày 2026-08-19 còn ~90 dòng rác casio | Thấp | Bộ lọc đã thêm sau khi file được tạo. Chạy lại sẽ sạch |
 | 5 | Google Trends chặn IP nếu chạy nhiều lần liên tiếp | Trung bình | Đã gặp thật: 1 lô bị bỏ qua lúc 15:07. Nên giãn cách ít nhất 1–2 giờ giữa các lần chạy |
-| 6 | `gpt-5-mini` viết ngắn: ~2.100 từ so với chuẩn 3.000 | Trung bình | Không phải lỗi code. Cách gỡ: đổi sang `gpt-5`, hoặc dùng ô "Yêu cầu bổ sung" đòi viết dài hơn, hoặc hạ chuẩn trong `writer/config.py` |
-| 7 | Cụm lõi từ khóa bóc chưa đủ ngắn với từ khóa dài | Trung bình | `lay_tu_khoa_loi()` cắt "cách kiểm tra ram máy tính có bị lỗi không" xuống còn 6 chữ "kiểm tra ram máy tính có bị lỗi". Đòi lặp 15–20 lần một mệnh đề 6 chữ là bất khả thi. Đo trên bài thật: cụm đó 7 lần (0,34%) nhưng "kiểm tra ram" tới 14 lần (0,68%) và có mặt ở 2 thẻ H2. Cần chốt lại cách bóc lõi — xem ghi chú bên dưới |
-| 8 | AI đếm ký tự SEO Title sai | Thấp | Tự khai 55, thật 65. Bản chất mô hình ngôn ngữ, không sửa bằng prompt được. Bộ kiểm tra đã bắt được, sửa tay trước khi đăng |
+| 6 | Bài chỉ ra ~2.100–2.500 từ so với chuẩn 3.000 | Trung bình | **Cả `gpt-5-mini` lẫn `gpt-5` đều vậy** nên nhiều khả năng do prompt chưa ép đủ mạnh về độ dài, không phải do model. Đã loại trừ giới hạn token (mới dùng 8.474/24.000). Việc nên làm tiếp: thêm yêu cầu độ dài tối thiểu cho từng thẻ H2 vào prompt |
+| 7 | AI đếm ký tự SEO Title sai | Thấp | Tự khai 55, thật 65. Bản chất mô hình ngôn ngữ, không sửa bằng prompt được. Bộ kiểm tra đã bắt được, sửa tay trước khi đăng |
+| 8 | `BANG_GIA` chưa có đơn giá OpenAI | Thấp | Ô chi phí chỉ hiện số token, không hiện tiền. Điền đơn giá từ trang billing của OpenAI vào `writer/config.py` |
+| 9 | Mỗi model mới chạy đúng 1 bài | Trung bình | Đủ để kết luận "không cần đổi sang gpt-5", chưa đủ để xếp hạng model. Muốn chắc thì chạy thêm 3–5 từ khóa khác nhau |
 
 ---
 

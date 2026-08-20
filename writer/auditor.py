@@ -62,6 +62,12 @@ class BaoCaoKiemTra:
     # bảng tự kiểm tra, chỉ phần thân bài mới được tính — không nói ra thì
     # người dùng sửa chữ ở ngoài phạm vi đó rồi thắc mắc sao số không đổi.
     pham_vi_dem: str = ""
+    # Cụm lõi đã dùng để chấm, và hai danh sách câu cần sửa. Giữ ở đây để cửa sổ
+    # kết quả hiển thị đúng những câu đã đếm — trước đây nó tự đếm lại bằng
+    # NGUYÊN từ khóa nên số câu liệt kê không khớp con số ở bảng điểm.
+    tu_khoa_loi: str = ""
+    cau_nhoi: List[str] = field(default_factory=list)
+    so_lieu_nghi_bia: List[str] = field(default_factory=list)
 
     @property
     def so_dat(self) -> int:
@@ -133,11 +139,13 @@ def kiem_tra(noi_dung: str, tu_khoa: str) -> BaoCaoKiemTra:
     # Chấm trên CỤM LÕI chứ không phải nguyên câu hỏi: với "cpu hàng tray là gì",
     # lặp nguyên cụm 15-20 lần là bất khả thi, còn lõi "cpu hàng tray" thì tự
     # nhiên. Đo thật trên một bài: nguyên cụm 12 lần, cụm lõi 38 lần.
-    loi = lay_tu_khoa_loi(tu_khoa)
     # Đếm từ khóa trên CÙNG văn bản đã bỏ markup như lúc đếm từ. Bản đầu đếm từ
     # trên bản đã lọc còn đếm từ khóa trên bản thô, nên mật độ là phép chia của
     # hai đại lượng khác cơ sở — có bài ra 6,17% trong khi thực tế khoảng 1,7%.
     than_sach = _bo_markup(than_bai)
+    # Truyền thân bài vào để hàm chọn được cụm lõi mà bài thực sự bám vào,
+    # thay vì đoán mò theo vị trí chữ trong từ khóa.
+    loi = lay_tu_khoa_loi(tu_khoa, than_sach)
     so_lan = dem_tu_khoa(than_sach, loi)
     mat_do = (so_lan / so_tu * 100) if so_tu else 0.0
     ghi_chu_loi = "" if loi == tu_khoa.strip() else f" (cụm lõi \"{loi}\")"
@@ -276,6 +284,9 @@ def kiem_tra(noi_dung: str, tu_khoa: str) -> BaoCaoKiemTra:
         "xóa hoặc thay bằng số liệu thật của cửa hàng.",
     ))
 
+    bao_cao.tu_khoa_loi = loi
+    bao_cao.cau_nhoi = cau_nhoi
+    bao_cao.so_lieu_nghi_bia = so_bia
     return bao_cao
 
 
@@ -307,9 +318,14 @@ _DUOI_CAU_HOI = [
 ]
 
 
-def lay_tu_khoa_loi(tu_khoa: str) -> str:
+# Cụm lõi dài hơn ngần này thì không còn là "cụm" mà đã thành một mệnh đề.
+# Không người viết SEO nào lặp lại nguyên một mệnh đề 15–20 lần trong bài.
+SO_CHU_TOI_DA_CUM_LOI = 3
+
+
+def lay_tu_khoa_loi(tu_khoa: str, noi_dung: str = "") -> str:
     """
-    Bóc phần lõi của từ khóa bằng cách bỏ các chữ dùng để hỏi.
+    Bóc phần lõi của từ khóa — cụm chữ mà bài viết thực sự lặp lại.
 
     VÌ SAO CẦN
         Với từ khóa "cpu hàng tray là gì", đếm nguyên cụm chỉ ra 12 lần trong khi
@@ -317,26 +333,61 @@ def lay_tu_khoa_loi(tu_khoa: str) -> str:
         bất khả thi và đọc lên rất gượng — Google cũng không đòi hỏi vậy. Phần lõi
         mới là thứ đáng đếm.
 
-    Trả về chính từ khóa gốc nếu bóc xong không còn gì đáng kể.
+    VÌ SAO PHẢI CHỌN THEO NỘI DUNG BÀI
+        Bản đầu chỉ bóc chữ hỏi ở hai đầu rồi giữ lại phần giữa. Với từ khóa dài
+        thì phần giữa vẫn là cả mệnh đề: "cách kiểm tra ram máy tính có bị lỗi
+        không" bóc ra "kiểm tra ram máy tính có bị lỗi" — sáu chữ, đếm được 7 lần
+        và 0 thẻ H2, nên bảng điểm báo đỏ dù bài viết không hề tệ.
+
+        Cắt cứng lấy 3 chữ đầu cũng không xong, vì chỗ đắt của từ khóa không phải
+        lúc nào cũng nằm ở đầu. Đo trên ba bài thật:
+
+            cách kiểm tra ram máy tính có bị lỗi không -> "kiểm tra ram"  (đầu)
+            cách khắc phục loa máy tính bàn không nghe được -> "loa máy tính" (giữa)
+            máy tính bị lỗi màn hình xanh recovery -> "màn hình xanh"     (cuối)
+
+        Nên cách chọn là: xét mọi cụm 3 chữ liền nhau trong từ khóa, lấy cụm được
+        bài dùng nhiều nhất. Đó chính là chủ đề mà người viết đã bám vào.
+
+    Bỏ trống `noi_dung` thì chỉ bóc chữ hỏi rồi lấy 3 chữ đầu — dùng khi chưa có bài.
     """
     tu = tu_khoa.strip().split()
     if not tu:
         return tu_khoa
 
+    # Bóc lặp lại chứ không bóc một lần: "cách kiểm tra ... có tốt không" có thể
+    # dính cả chữ hỏi đầu lẫn đuôi, và bóc xong lại lộ ra chữ hỏi tiếp theo.
     # Cắt theo SỐ TỪ trên danh sách đã tách, để chữ trả về vẫn còn nguyên dấu.
-    for dau in sorted(_DAU_CAU_HOI, key=lambda x: -len(x.split())):
-        n = len(dau.split())
-        if len(tu) > n and _chuan_hoa(" ".join(tu[:n])) == dau:
-            tu = tu[n:]
-            break
-    for duoi in sorted(_DUOI_CAU_HOI, key=lambda x: -len(x.split())):
-        n = len(duoi.split())
-        if len(tu) > n and _chuan_hoa(" ".join(tu[-n:])) == duoi:
-            tu = tu[:-n]
-            break
+    con_boc = True
+    while con_boc and len(tu) > SO_CHU_TOI_DA_CUM_LOI:
+        con_boc = False
+        for dau in sorted(_DAU_CAU_HOI, key=lambda x: -len(x.split())):
+            n = len(dau.split())
+            if len(tu) > n and _chuan_hoa(" ".join(tu[:n])) == dau:
+                tu, con_boc = tu[n:], True
+                break
+        for duoi in sorted(_DUOI_CAU_HOI, key=lambda x: -len(x.split())):
+            n = len(duoi.split())
+            if len(tu) > n and _chuan_hoa(" ".join(tu[-n:])) == duoi:
+                tu, con_boc = tu[:-n], True
+                break
 
-    # Bóc quá tay, còn lại một chữ trơ trọi thì giữ nguyên từ khóa gốc.
-    return " ".join(tu) if len(tu) >= 2 else tu_khoa.strip()
+    if len(tu) < 2:
+        # Bóc quá tay, còn lại một chữ trơ trọi thì giữ nguyên từ khóa gốc.
+        return tu_khoa.strip()
+    if len(tu) <= SO_CHU_TOI_DA_CUM_LOI:
+        return " ".join(tu)
+
+    cac_cum = [" ".join(tu[i:i + SO_CHU_TOI_DA_CUM_LOI])
+               for i in range(len(tu) - SO_CHU_TOI_DA_CUM_LOI + 1)]
+
+    if noi_dung:
+        # max() giữ cụm đầu tiên khi hòa, tức là ưu tiên cụm nằm trước.
+        tot_nhat = max(cac_cum, key=lambda c: dem_tu_khoa(noi_dung, c))
+        if dem_tu_khoa(noi_dung, tot_nhat) > 0:
+            return tot_nhat
+
+    return cac_cum[0]
 
 
 def dem_link(noi_dung: str):

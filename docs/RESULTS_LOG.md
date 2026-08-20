@@ -58,6 +58,7 @@ khớp luật nào. Cần bổ sung luật phân loại chi tiết hơn trong `s
 
 | Ngày giờ | Từ khóa | Model | Số từ | Thời gian | Chi phí |
 |---|---|---|---:|---:|---|
+| 2026-08-20 10:07 | cách kiểm tra ram máy tính có bị lỗi không | **gpt-5** | 2.460 | 125 giây | 3.362 vào / 8.474 ra |
 | 2026-08-20 09:57 | cách kiểm tra ram máy tính có bị lỗi không | **gpt-5-mini** | 2.061 | 79 giây | 3.362 vào / 7.149 ra |
 | 2026-08-20 09:54 | cách kiểm tra ram máy tính có bị lỗi không | **gpt-5-mini** | 2.387 | 72 giây | 2.911 vào / 6.881 ra |
 | 2026-08-19 17:43 | cách khắc phục loa máy tính bàn không nghe được | gemini-3.6-flash | 1.455 | ~55 giây | miễn phí |
@@ -89,6 +90,33 @@ là phải chạy lại một bài rồi soi bằng bộ kiểm tra, không đư
 
 **Còn tồn:** gpt-5-mini viết ngắn (~2.100 từ so với chuẩn 3.000) và đếm ký tự title sai
 (tự khai 55, thật 65). Xem mục "Vấn đề đang tồn tại" trong `PROJECT_STATE.md`.
+
+### gpt-5-mini và gpt-5 — so trực tiếp (2026-08-20)
+
+Cùng từ khóa, cùng prompt, chấm lại cả hai bằng **thước đo mới** (cụm lõi + mật độ đã nới):
+
+| | gpt-5-mini | gpt-5 |
+|---|---|---|
+| Điểm | **21 đạt / 4 chưa đạt** | 19 đạt / 6 chưa đạt |
+| Số từ | 2.061 | 2.460 |
+| Thời gian | 79 giây | 125 giây |
+| Token ra | 7.149 | 8.474 |
+| Chưa đạt | số từ · số lần từ khóa · từ khóa trong H2 · độ dài title | số từ · số lần từ khóa · độ dài title · **thừa external link** · **thiếu author bio** · **1 số liệu nghi bịa** |
+
+**Kết luận:** `gpt-5` **không đáng tiền** cho việc này. Nó chấm thấp hơn, chậm gần gấp đôi,
+đắt hơn nhiều lần mỗi bài, và những mục nó trượt lại nặng hơn — thiếu hẳn khối author bio
+và bịa một số liệu, trong khi mini chỉ trượt mấy mục hình thức (dài title, số lần từ khóa).
+
+⚠️ **Cảnh báo về độ tin cậy:** mỗi model mới chạy **một bài**. Kết quả này đủ để nói
+"không có lý do gì phải đổi sang gpt-5", chưa đủ để nói "mini tốt hơn gpt-5". Muốn chắc thì
+chạy thêm 3–5 từ khóa khác nhau.
+
+**Cả hai đều không đạt 3.000 từ.** Đây là điểm chung, nên nhiều khả năng do prompt chưa ép
+đủ mạnh về độ dài chứ không phải do model.
+
+⚠️ Bảng `BANG_GIA` trong `writer/config.py` **chưa có dòng nào cho OpenAI**, nên ô chi phí
+chỉ hiện số token thay vì tiền. Điền đơn giá lấy từ trang billing của OpenAI vào đó nếu
+muốn thấy số tiền.
 
 ### ⚠ HẠN MỨC GÓI MIỄN PHÍ — điều quan trọng nhất cần biết
 
