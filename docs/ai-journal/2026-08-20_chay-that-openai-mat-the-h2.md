@@ -190,4 +190,106 @@ phạm nhiều khả năng là prompt chưa ép đủ mạnh về độ dài, kh
 - Dựng thật `CuaSoKiemTra` bằng tkinter rồi `update()` — cửa sổ lên được, không sập
 - Danh sách trong tab "Câu cần sửa" nay khớp đúng con số ở bảng điểm (0 câu / 1 chỗ)
 
+---
+
+# Phần ba — ép bài đủ 3.000 từ
+
+Việc còn lại từ phần hai: cả hai model đều chỉ ra 2.100–2.500 từ.
+
+## Thủ phạm là chính prompt, không phải model
+
+Trước khi thêm yêu cầu mới, đọc lại xem prompt đang nói gì về độ dài. Nó nói **được phép
+viết ngắn**, và nói tới hai lần:
+
+> Đây là **mục tiêu để nhắm tới**, không phải ràng buộc cứng. Ưu tiên bài đọc trôi chảy;
+> lệch vài phần trăm chấp nhận được.
+
+> Lặp ý mục trước là dấu hiệu bài đang bị kéo dài một cách vô ích — **thà ngắn hơn mục tiêu
+> còn hơn loãng**.
+
+Không model nào sai cả. Cả hai làm đúng lời dặn. Đây là lần thứ hai trong ngày nguyên nhân
+nằm ở lời dặn chứ không ở công cụ — lần đầu là chuyện thiếu `##`.
+
+Bài học chung của cả hai: **trước khi thêm yêu cầu mới, đọc xem prompt đang cho phép cái
+ngược lại hay không.** Thêm một câu "phải đủ 3.000 từ" vào bên cạnh hai câu trên thì chỉ tạo
+ra mâu thuẫn, model chọn vế nào cũng được.
+
+## Ba phần của cách sửa
+
+**1. Bỏ hai câu cho phép, đổi độ dài thành sàn cứng.** Vẫn giữ ý "đừng lan man", nhưng
+chuyển nó thành lời cảnh báo về *chữ đệm* chứ không phải lời cho phép *viết ngắn*.
+
+**2. Ngân sách chữ cho từng khối thay cho mục tiêu tổng.** Đây mới là phần quan trọng. Mô
+hình ngôn ngữ không nhẩm nổi "cả bài đã được 3.000 từ chưa" — đã đo rồi, nó tự khai 55 ký tự
+trong khi thật 65. Nhưng nó bám được mục tiêu **cục bộ**: viết mục này khoảng 350–450 từ.
+
+| Khối | Ngân sách |
+|---|---:|
+| Mỗi mục nội dung chính | 350–450 từ × 7–9 mục |
+| Mỗi câu FAQ | 60–120 từ × ≥5 |
+| Mở bài / Trả lời nhanh | 60–90 từ mỗi khối |
+| Checklist | 100–150 từ |
+| Kết bài + CTA + đội ngũ | 150–250 từ |
+
+Bảy mục × 350 đã là 2.450, cộng phần còn lại là vừa qua sàn. Prompt nói thẳng luôn rằng nếu
+bài thiếu thì gần như chắc chắn do mục nội dung viết mỏng, để model biết chỗ cần bù.
+
+**3. Dạy cách viết dài mà không nhảm.** Ép độ dài mà không nói cách thì model sẽ độn chữ.
+Nên liệt kê 5 cách bù hợp lệ, xếp theo thứ tự ưu tiên — đứng đầu là *tách mục lớn thành các
+trường hợp cụ thể người đọc thật sự gặp* — và cấm thẳng 4 kiểu chữ đệm quen thuộc ("như đã
+biết", "trong thời đại công nghệ hiện nay", đoạn kết nhỏ cuối mỗi mục, liệt kê lợi ích
+chung chung).
+
+**Một mâu thuẫn phát sinh phải dọn:** khung bài ở BƯỚC 2 chỉ liệt kê 5–6 mục cho mỗi nhóm,
+trong khi phần mới đòi 7–9 mục. Đã thêm ghi chú rằng khung đó là xương sống tối thiểu, thiếu
+bao nhiêu thì **tách một mục lớn thành nhiều mục cụ thể hơn** chứ đừng nghĩ thêm chủ đề rời
+rạc, kèm ví dụ cụ thể. Nâng luôn chuẩn số H2 từ 8–12 lên 12–14 cho khớp.
+
+## Kết quả
+
+| Lần chạy | Số từ | Điểm |
+|---|---:|---|
+| Trước khi sửa | 2.061 | 21 đạt / 4 chưa |
+| `cách kiểm tra ram máy tính có bị lỗi không` | **3.499** | **22 đạt / 3 chưa** |
+| `cách vệ sinh laptop tại nhà an toàn` | **3.071** | 21 đạt / 4 chưa |
+
+Chạy hai từ khóa khác hẳn nhau chứ không lặp lại một từ khóa, để biết chắc không phải ăn may.
+
+## Sửa kèm: bộ bắt số liệu bịa báo oan
+
+Bài mới bị tuýt còi hai câu, soi ra thì cả hai đều oan:
+
+- *"…không dùng **cồn 90%** vì có thể để lại màng bám"* — nồng độ dung dịch
+- *"…không tuyệt đối **100%** là RAM hỏng"* — lối nói nhấn mạnh
+
+Cảnh báo sai là cảnh báo bị bỏ qua, mà bị bỏ qua thì cả mục đó thành vô dụng. Đây đúng là
+lỗi đã sửa một lần rồi ("bản đầu bắt nhầm 5/5 câu kiểu này") mà bộ lọc còn hẹp.
+
+Lần này sửa cấu trúc chứ không nới danh sách: **gạch bỏ những con số vô hại khỏi câu rồi mới
+soi phần còn lại**. Kiểu cũ — thấy số vô hại là tha cả câu — bỏ sót câu vừa có nồng độ vừa
+có số bịa thật:
+
+> "dùng cồn 90% để lau, và 65% khách của chúng tôi gặp lỗi này"
+
+Bỏ luôn hàm `_la_cach_noi_quen()` vì cách mới không cần tới nó nữa.
+
+Kiểm bằng 13 câu mẫu — 7 câu phải bỏ qua (nồng độ cồn, độ ẩm, mức pin, "mới 100%") và 6 câu
+phải bắt (tỷ lệ trường hợp, hiệu suất tăng, số ca, số lượt khách, câu hỗn hợp). Đúng cả 13.
+
+## Ba mục còn đỏ
+
+Chỉ một cái đáng quan tâm:
+
+| Mục | Đánh giá |
+|---|---|
+| Độ dài Title / Meta | **Không sửa được bằng prompt.** Mô hình không đếm nổi ký tự. Bộ kiểm tra bắt được, sửa tay 10 giây. Đừng tốn công vì nó |
+| Từ khóa trong H2 (bài vệ sinh laptop được 1 thẻ) | Bài RAM đạt 4 thẻ nên chưa rõ là lỗi hệ thống hay do từ khóa |
+| Internal link (bài vệ sinh laptop được 4) | Bài RAM đạt 6. Thiếu đúng 1 link |
+
+## Kiểm chứng cuối
+
+- `compileall` sạch, import toàn bộ `gui/` + `writer/` không lỗi
+- Dựng thật `CuaSoKiemTra` bằng tkinter trên bài mới — cửa sổ lên được, không sập
+- File chạy thử tạm đã xóa
+
 Ghi vào mục "Vấn đề đang tồn tại" số 6–9 trong `PROJECT_STATE.md`.

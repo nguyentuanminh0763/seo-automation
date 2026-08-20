@@ -58,6 +58,8 @@ khớp luật nào. Cần bổ sung luật phân loại chi tiết hơn trong `s
 
 | Ngày giờ | Từ khóa | Model | Số từ | Thời gian | Chi phí |
 |---|---|---|---:|---:|---|
+| 2026-08-20 10:43 | cách vệ sinh laptop tại nhà an toàn | gpt-5-mini | **3.071** | 104 giây | token ra 8.921 |
+| 2026-08-20 10:38 | cách kiểm tra ram máy tính có bị lỗi không | gpt-5-mini | **3.499** | 94 giây | token ra 9.555 |
 | 2026-08-20 10:07 | cách kiểm tra ram máy tính có bị lỗi không | **gpt-5** | 2.460 | 125 giây | 3.362 vào / 8.474 ra |
 | 2026-08-20 09:57 | cách kiểm tra ram máy tính có bị lỗi không | **gpt-5-mini** | 2.061 | 79 giây | 3.362 vào / 7.149 ra |
 | 2026-08-20 09:54 | cách kiểm tra ram máy tính có bị lỗi không | **gpt-5-mini** | 2.387 | 72 giây | 2.911 vào / 6.881 ra |
@@ -117,6 +119,41 @@ chạy thêm 3–5 từ khóa khác nhau.
 ⚠️ Bảng `BANG_GIA` trong `writer/config.py` **chưa có dòng nào cho OpenAI**, nên ô chi phí
 chỉ hiện số token thay vì tiền. Điền đơn giá lấy từ trang billing của OpenAI vào đó nếu
 muốn thấy số tiền.
+
+### Ép đủ 3.000 từ — đã xong (2026-08-20)
+
+Nguyên nhân không phải "prompt thiếu yêu cầu" mà là **prompt cho phép viết ngắn**, nói tới
+hai lần: *"không phải ràng buộc cứng… lệch vài phần trăm chấp nhận được"* và *"thà ngắn hơn
+mục tiêu còn hơn loãng"*. Cả hai model đều làm đúng lời dặn.
+
+Sửa: bỏ hai câu đó, đổi độ dài thành **sàn cứng**, và thay mục tiêu tổng 3.000 từ bằng
+**ngân sách chữ cho từng khối** (mỗi mục nội dung 350–450 từ × 7–9 mục). Mô hình ngôn ngữ
+không nhẩm nổi tổng cả bài nhưng bám được mục tiêu cục bộ từng mục. Thêm mục "viết dài bằng
+chất, không bằng chữ đệm" liệt kê 5 cách bù và 4 kiểu chữ đệm bị cấm.
+
+| Lần chạy | Số từ | Điểm |
+|---|---:|---|
+| Trước khi sửa | 2.061 | 21 đạt / 4 chưa |
+| `cách kiểm tra ram máy tính có bị lỗi không` | **3.499** | **22 đạt / 3 chưa** |
+| `cách vệ sinh laptop tại nhà an toàn` | **3.071** | 21 đạt / 4 chưa |
+
+Hai từ khóa khác hẳn nhau đều vượt sàn, nên không phải ăn may một lần.
+
+**Ba mục còn đỏ, và chỉ một cái đáng sửa:**
+
+| Mục | Đánh giá |
+|---|---|
+| Độ dài Title / Meta (64–65 và 166 ký tự) | **Không sửa được bằng prompt.** Mô hình không đếm nổi ký tự — tự khai 55 trong khi thật 65. Bộ kiểm tra bắt được, sửa tay 10 giây trước khi đăng |
+| Từ khóa trong H2 chỉ 1 thẻ (bài vệ sinh laptop) | Đáng theo dõi. Bài RAM đạt 4 thẻ nên chưa rõ là lỗi hệ thống hay do từ khóa dài |
+| Internal link 4 (bài vệ sinh laptop) | Thiếu 1 link. Bài RAM đạt 6 |
+
+**Sửa kèm — bộ bắt số liệu bịa báo oan 2/2 lần.** Nó tuýt còi *"không dùng cồn 90%"*
+(nồng độ dung dịch) và *"không tuyệt đối 100% là RAM hỏng"* (lối nói nhấn mạnh). Cảnh báo
+sai là cảnh báo bị bỏ qua, mà bỏ qua thì mục này thành vô dụng — đây đúng là lỗi đã sửa một
+lần rồi mà bộ lọc còn hẹp. Nay đổi cách làm: **gạch bỏ những con số vô hại rồi mới soi phần
+còn lại**, thay vì thấy số vô hại là tha cả câu. Kiểu lọc cũ bỏ sót câu vừa có nồng độ vừa
+có số bịa thật: *"dùng cồn 90% để lau, và 65% khách của chúng tôi gặp lỗi này"*.
+Đã kiểm 13 câu mẫu (7 câu phải bỏ qua, 6 câu phải bắt) — đúng cả 13.
 
 ### ⚠ HẠN MỨC GÓI MIỄN PHÍ — điều quan trọng nhất cần biết
 

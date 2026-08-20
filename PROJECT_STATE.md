@@ -84,6 +84,37 @@ Tiện thể sửa một chỗ lệch trong cửa sổ kết quả: tab "Câu c�
 từ khóa trong khi bảng điểm chấm theo **cụm lõi**, nên số câu liệt kê không khớp con số
 hiển thị. Nay báo cáo mang sẵn hai danh sách đó, cửa sổ chỉ việc đọc.
 
+### Sửa tiếp: ép bài đủ 3.000 từ
+
+**File đã sửa:** `prompts/giaphongpc-tong-quat.md`, `writer/auditor.py`
+
+Nguyên nhân không phải "prompt thiếu yêu cầu" mà là **prompt cho phép viết ngắn**, nói tới
+hai lần: *"không phải ràng buộc cứng… lệch vài phần trăm chấp nhận được"* và *"thà ngắn hơn
+mục tiêu còn hơn loãng"*. Cả `gpt-5-mini` lẫn `gpt-5` đều làm đúng lời dặn — không model nào
+sai cả.
+
+Cách sửa gồm ba phần:
+1. Bỏ hai câu cho phép trên, đổi độ dài thành **sàn cứng ≥ 3.000 từ**.
+2. Thay mục tiêu tổng bằng **ngân sách chữ cho từng khối** — mỗi mục nội dung 350–450 từ,
+   7–9 mục. Mô hình không nhẩm nổi tổng cả bài nhưng bám được mục tiêu cục bộ từng mục.
+3. Thêm mục "viết dài bằng chất, không bằng chữ đệm": 5 cách bù hợp lệ (tách trường hợp cụ
+   thể, nói rõ thao tác, nêu lỗi thường gặp, chi tiết nghề, giải thích tại sao) và 4 kiểu
+   chữ đệm bị cấm.
+
+Đồng thời sửa khung bài ở BƯỚC 2 (chỉ liệt kê 5–6 mục, mâu thuẫn với yêu cầu 7–9) và nâng
+chuẩn số H2 từ 8–12 lên 12–14 cho khớp.
+
+| Lần chạy | Số từ | Điểm |
+|---|---:|---|
+| Trước khi sửa | 2.061 | 21 đạt / 4 chưa |
+| `cách kiểm tra ram máy tính có bị lỗi không` | **3.499** | **22 đạt / 3 chưa** |
+| `cách vệ sinh laptop tại nhà an toàn` | **3.071** | 21 đạt / 4 chưa |
+
+**Sửa kèm:** bộ bắt số liệu bịa báo oan 2/2 lần — tuýt còi "cồn 90%" (nồng độ) và "không
+tuyệt đối 100%" (lối nói nhấn mạnh). Cảnh báo sai là cảnh báo bị bỏ qua. Đổi cách làm: gạch
+bỏ những con số vô hại rồi mới soi phần còn lại, thay vì thấy số vô hại là tha cả câu — kiểu
+cũ bỏ sót câu vừa có nồng độ vừa có số bịa thật. Kiểm 13 câu mẫu, đúng cả 13.
+
 ---
 
 ## Cập nhật trước đó — Kiểm tra SEO, OpenAI, màn hình cấu hình (2026-08-20)
@@ -213,10 +244,10 @@ Nhật ký chi tiết: [`docs/ai-journal/2026-08-19_khoi-tao-bo-cong-cu.md`](doc
 | 3 | `mua bán sửa chữa laptop quận bình thạnh` xếp nhầm vào "Khắc phục lỗi" | Thấp | Luật "sửa" chạy trước luật thương mại. Đảo thứ tự trong `LUAT_PHAN_LOAI` là xong |
 | 4 | File Excel ngày 2026-08-19 còn ~90 dòng rác casio | Thấp | Bộ lọc đã thêm sau khi file được tạo. Chạy lại sẽ sạch |
 | 5 | Google Trends chặn IP nếu chạy nhiều lần liên tiếp | Trung bình | Đã gặp thật: 1 lô bị bỏ qua lúc 15:07. Nên giãn cách ít nhất 1–2 giờ giữa các lần chạy |
-| 6 | Bài chỉ ra ~2.100–2.500 từ so với chuẩn 3.000 | Trung bình | **Cả `gpt-5-mini` lẫn `gpt-5` đều vậy** nên nhiều khả năng do prompt chưa ép đủ mạnh về độ dài, không phải do model. Đã loại trừ giới hạn token (mới dùng 8.474/24.000). Việc nên làm tiếp: thêm yêu cầu độ dài tối thiểu cho từng thẻ H2 vào prompt |
-| 7 | AI đếm ký tự SEO Title sai | Thấp | Tự khai 55, thật 65. Bản chất mô hình ngôn ngữ, không sửa bằng prompt được. Bộ kiểm tra đã bắt được, sửa tay trước khi đăng |
-| 8 | `BANG_GIA` chưa có đơn giá OpenAI | Thấp | Ô chi phí chỉ hiện số token, không hiện tiền. Điền đơn giá từ trang billing của OpenAI vào `writer/config.py` |
-| 9 | Mỗi model mới chạy đúng 1 bài | Trung bình | Đủ để kết luận "không cần đổi sang gpt-5", chưa đủ để xếp hạng model. Muốn chắc thì chạy thêm 3–5 từ khóa khác nhau |
+| 6 | AI đếm ký tự SEO Title / Meta sai | Thấp | Tự khai 55, thật 65. Bản chất mô hình ngôn ngữ, **không sửa bằng prompt được**. Bộ kiểm tra đã bắt, sửa tay 10 giây trước khi đăng. Đây là mục đỏ thường trực, đừng tốn công sửa prompt vì nó |
+| 7 | `BANG_GIA` chưa có đơn giá OpenAI | Thấp | Ô chi phí chỉ hiện số token, không hiện tiền. Điền đơn giá từ trang billing của OpenAI vào `writer/config.py` |
+| 8 | Mỗi model mới chạy đúng 1 bài | Trung bình | Đủ để kết luận "không cần đổi sang gpt-5", chưa đủ để xếp hạng model. Muốn chắc thì chạy thêm 3–5 từ khóa khác nhau |
+| 9 | Từ khóa trong H2 và internal link chưa ổn định | Thấp | Bài RAM đạt (4 thẻ H2 / 6 link), bài vệ sinh laptop trượt (1 thẻ / 4 link). Chưa rõ là lỗi hệ thống hay do đặc điểm từ khóa — cần thêm vài bài mới kết luận được |
 
 ---
 
