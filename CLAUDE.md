@@ -6,8 +6,11 @@ Dự án: **SEO Automation cho giaphongpc.vn** — hai công cụ Python thu th�
 
 1. [`CLAUDE_RULES.md`](CLAUDE_RULES.md) — luật làm việc, các bẫy kỹ thuật đã gặp thật
 2. [`PROJECT_STATE.md`](PROJECT_STATE.md) — hiện trạng, vấn đề đang tồn tại
-3. [`SEO_AI_WORKFLOW_GUIDE.md`](SEO_AI_WORKFLOW_GUIDE.md) — cấu trúc dự án, quy trình chuẩn
-4. [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md) — kết quả các lần chạy trước
+3. [`implementation_plan.md`](implementation_plan.md) — **danh sách việc tồn**. Người dùng
+   sẽ bảo "đọc lại file này" khi muốn làm. Có cả mục *đã đánh giá góp ý AI khác* —
+   đọc trước để không bàn lại chuyện đã kết luận
+4. [`SEO_AI_WORKFLOW_GUIDE.md`](SEO_AI_WORKFLOW_GUIDE.md) — cấu trúc dự án, quy trình chuẩn
+5. [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md) — kết quả các lần chạy trước
 
 ## Nhắc nhanh
 

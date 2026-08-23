@@ -297,6 +297,17 @@ Nhật ký chi tiết: [`docs/ai-journal/2026-08-19_khoi-tao-bo-cong-cu.md`](doc
 
 ---
 
+## 📋 Việc tồn — xem [`implementation_plan.md`](implementation_plan.md)
+
+Toàn bộ việc đã bàn nhưng chưa làm nằm ở đó, kèm lý do và file bị ảnh hưởng. Trong đó có
+**Giai đoạn 0 — CHƯA CHẠY THẬT**, là những thứ viết code xong mà chưa xác minh: chữ chạy
+dần, nút Copy WordPress, mức suy nghĩ.
+
+File đó cũng ghi lại **kết luận đánh giá hai bản góp ý từ AI khác** — đọc trước để không
+bàn lại chuyện đã chốt.
+
+---
+
 ## Vấn đề đang tồn tại (chưa chặn tiến độ)
 
 | # | Vấn đề | Mức độ | Ghi chú |
