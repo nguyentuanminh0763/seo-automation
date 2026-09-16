@@ -16,7 +16,7 @@ export default function ManTrends({ khoiDong }) {
 
   return (
     <ManThuThap
-      bieu="📈"
+      bieu="xu-huong"
       tieuDe="Google Trends — từ khóa đột biến"
       moTa="Trả lời câu hỏi: cái gì đang nóng lên tuần này? Dùng để canh nhập hàng
             và bắt sóng, chạy khoảng một lần mỗi tuần."
@@ -29,24 +29,27 @@ export default function ManTrends({ khoiDong }) {
       })}
       tuyChon={
         <>
-          <div className="truong">
-            <label htmlFor="o-khung">Khung thời gian</label>
-            <select id="o-khung" className="o-chon" value={timeframe}
-                    onChange={(e) => datTimeframe(e.target.value)}>
-              {(khoiDong?.trends?.khung_thoi_gian ?? []).map((k) => (
-                <option key={k.ma} value={k.ma}>{k.ten}</option>
-              ))}
-            </select>
-          </div>
+          {/* Hai ô chọn ngắn nên xếp cạnh nhau cho đỡ tốn chiều cao màn hình. */}
+          <div className="cap-truong">
+            <div className="truong">
+              <label htmlFor="o-khung">Khung thời gian</label>
+              <select id="o-khung" className="o-chon" value={timeframe}
+                      onChange={(e) => datTimeframe(e.target.value)}>
+                {(khoiDong?.trends?.khung_thoi_gian ?? []).map((k) => (
+                  <option key={k.ma} value={k.ma}>{k.ten}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="truong">
-            <label htmlFor="o-khu-vuc">Khu vực</label>
-            <select id="o-khu-vuc" className="o-chon" value={geo}
-                    onChange={(e) => datGeo(e.target.value)}>
-              {(khoiDong?.trends?.khu_vuc ?? []).map((k) => (
-                <option key={k.ma} value={k.ma}>{k.ten}</option>
-              ))}
-            </select>
+            <div className="truong">
+              <label htmlFor="o-khu-vuc">Khu vực</label>
+              <select id="o-khu-vuc" className="o-chon" value={geo}
+                      onChange={(e) => datGeo(e.target.value)}>
+                {(khoiDong?.trends?.khu_vuc ?? []).map((k) => (
+                  <option key={k.ma} value={k.ma}>{k.ten}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="truong">
@@ -66,7 +69,7 @@ export default function ManTrends({ khoiDong }) {
       }
       truocKhiChay={
         soNhom > 0 && (
-          <Hop kieu="chinh" bieu="⏱">
+          <Hop kieu="chinh" bieu="dong-ho">
             Chia thành <b>{soNhom} nhóm</b> (Google chỉ cho so sánh tối đa 5 từ
             mỗi lần), nghỉ 5–12 giây giữa các nhóm.
             Dự kiến khoảng <b>{Math.max(1, Math.round(soNhom * 10 / 60))} phút</b>.

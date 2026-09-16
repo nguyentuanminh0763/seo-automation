@@ -170,4 +170,4 @@ TU_KHOA_LOAI_BO = [
 # 7. ĐẦU RA
 # =============================================================================
 OUTPUT_DIR = "output"
-OUTPUT_PREFIX = "content_keywords_giaphongpc"
+OUTPUT_PREFIX = "content_keywords_dolar"

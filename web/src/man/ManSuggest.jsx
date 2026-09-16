@@ -27,7 +27,7 @@ export default function ManSuggest({ khoiDong }) {
 
   return (
     <ManThuThap
-      bieu="💡"
+      bieu="y-tuong"
       tieuDe="Google Suggest — từ khóa làm nội dung"
       moTa="Trả lời câu hỏi: người ta hay hỏi gì? Ra hàng nghìn câu hỏi thật để
             lên kế hoạch viết bài. Chạy khoảng một lần mỗi quý."

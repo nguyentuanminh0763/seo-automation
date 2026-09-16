@@ -29,7 +29,7 @@ from . import config, routes
 def tao_ung_dung(thu_muc_goc: str, dev: bool = False) -> FastAPI:
     """Dựng ứng dụng FastAPI hoàn chỉnh."""
     app = FastAPI(
-        title="SEO Keyword Tools — giaphongpc.vn",
+        title="SEO Keyword Tools — Đô Lar",
         description="Giao diện web cho hai công cụ thu thập từ khóa.",
         version="1.0.0",
         # Tài liệu API tự sinh, mở bằng http://127.0.0.1:8765/docs
@@ -126,7 +126,7 @@ def chay(thu_muc_goc: str, cong: int = config.CONG,
     dia_chi = f"http://{config.DIA_CHI}:{cong}"
 
     print("=" * 62)
-    print(" GIAO DIỆN WEB — SEO KEYWORD TOOLS (giaphongpc.vn)")
+    print(" GIAO DIỆN WEB — SEO KEYWORD TOOLS (Đô Lar)")
     print("=" * 62)
     print(f" Mở trình duyệt tại:  {dia_chi}")
     print(f" Tài liệu API:        {dia_chi}/docs")

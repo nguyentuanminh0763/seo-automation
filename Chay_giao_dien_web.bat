@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title SEO Keyword Tools - Giao dien web
+title SEO Keyword Tools - Do Lar - Giao dien web
 cd /d "%~dp0"
 
 rem ===========================================================================

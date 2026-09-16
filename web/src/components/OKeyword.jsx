@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import Bieu from './Bieu'
 
 /**
  * Ô nhập từ khóa: mỗi dòng một từ.
@@ -48,7 +49,7 @@ export default function OKeyword({ giaTri, doiGiaTri, khoa, matDinh, nhan, goiY 
         <button type="button" className="nut nho" disabled={khoa}
                 onClick={() => doiGiaTri(matDinh.join('\n'))}
                 style={{ alignSelf: 'flex-start' }}>
-          ↺ Khôi phục danh sách mặc định
+          <Bieu ten="lam-moi" co={13} /> Khôi phục danh sách mặc định
         </button>
       )}
     </div>

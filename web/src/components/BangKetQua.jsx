@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Hop from './Hop'
+import Bieu from './Bieu'
 
 /**
  * Bảng kết quả: tìm nhanh, sắp xếp theo cột, lọc theo nhóm, xuất file.
@@ -65,7 +66,7 @@ export default function BangKetQua({ bang, cotLoc, onXuat, dangXuat }) {
             value={tim} onChange={(e) => datTim(e.target.value)}
           />
           <button className="nut nho" disabled={dangXuat} onClick={() => onXuat('xlsx')}>
-            {dangXuat ? <span className="quay" /> : '⬇'} Excel
+            {dangXuat ? <span className="quay" /> : <Bieu ten="tai-xuong" co={13} />} Excel
           </button>
           <button className="nut nho" disabled={dangXuat} onClick={() => onXuat('csv')}>
             CSV
@@ -127,7 +128,7 @@ export default function BangKetQua({ bang, cotLoc, onXuat, dangXuat }) {
 
         {dongHien.length === 0 && (
           <div className="trong">
-            <div className="trong-bieu">🔍</div>
+            <Bieu ten="kinh-lup" co={30} className="bieu trong-bieu" />
             <b>Không có dòng nào khớp</b>
             <span>Thử xóa bớt chữ trong ô tìm nhanh hoặc chọn lại nhóm.</span>
           </div>

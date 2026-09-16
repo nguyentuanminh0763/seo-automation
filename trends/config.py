@@ -80,4 +80,4 @@ RISING_THRESHOLD = 500      # Ngưỡng cho chế độ --include-rising (lấy 
 # 6. ĐẦU RA
 # =============================================================================
 OUTPUT_DIR = "output"                   # Thư mục báo cáo (tự tạo nếu chưa có)
-OUTPUT_PREFIX = "breakout_giaphongpc"   # Tiền tố tên file
+OUTPUT_PREFIX = "breakout_dolar"        # Tiền tố tên file

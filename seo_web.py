@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ===============================================================================
- GIAO DIỆN WEB — SEO KEYWORD TOOLS (giaphongpc.vn)
+ GIAO DIỆN WEB — SEO KEYWORD TOOLS (Đô Lar)
 ===============================================================================
 
  CÁCH CHẠY DỄ NHẤT: bấm đúp vào file  Chay_giao_dien_web.bat

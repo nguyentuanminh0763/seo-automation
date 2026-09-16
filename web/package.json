@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Giao diện web cho bộ công cụ SEO của giaphongpc.vn",
+  "description": "Giao diện web cho bộ công cụ SEO của Đô Lar",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

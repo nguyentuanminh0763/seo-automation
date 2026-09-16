@@ -6,6 +6,7 @@ import OLog from '../components/OLog'
 import BangKetQua from '../components/BangKetQua'
 import TheThongKe from '../components/TheThongKe'
 import Hop from '../components/Hop'
+import Bieu from '../components/Bieu'
 
 /**
  * Khung chung cho hai màn thu thập.
@@ -51,11 +52,19 @@ export default function ManThuThap({
   const phut = Math.floor(v.giay / 60)
   const dongHo = phut > 0 ? `${phut} phút ${v.giay % 60} giây` : `${v.giay} giây`
 
+  // Nhãn trạng thái ở góc ô nhật ký: biểu tượng + chữ, khai một chỗ cho gọn.
+  const nhan = {
+    dang_chay: ['dong-ho',  dongHo],
+    xong:      ['dau-tich', `xong sau ${dongHo}`],
+    da_dung:   ['dung',     `đã dừng sau ${dongHo}`],
+    loi:       ['loi',      'lỗi'],
+  }[v.trangThai] ?? [null, 'chưa chạy']
+
   return (
     <>
       <div className="dau-trang">
         <div>
-          <h1>{bieu} {tieuDe}</h1>
+          <h1><Bieu ten={bieu} co={19} className="bieu dau-bieu" /> {tieuDe}</h1>
           <p>{moTa}</p>
         </div>
       </div>
@@ -81,18 +90,17 @@ export default function ManThuThap({
             {!v.dangChay ? (
               <button className="nut chinh to" onClick={bamChay}
                       disabled={danhSach.length === 0}>
-                ▶ Bắt đầu chạy
+                <Bieu ten="chay" co={13} /> Bắt đầu chạy
               </button>
             ) : (
               <button className="nut nguy to" onClick={v.bamDung}>
-                ■ Dừng lại
+                <Bieu ten="dung" co={13} /> Dừng lại
               </button>
             )}
           </div>
 
           {v.dangChay && (
-            <Hop kieu="chinh" bieu={<span className="quay" style={{ borderTopColor: 'var(--chinh)' }} />}
-                 tieuDe={`Đang chạy — ${dongHo}`}>
+            <Hop kieu="chinh" bieu="dong-ho" tieuDe={`Đang chạy — ${dongHo}`}>
               Cứ để yên, đừng đóng cửa sổ đen. Bấm <b>Dừng lại</b> bất cứ lúc nào
               cũng được, <b>phần kết quả đã thu vẫn giữ nguyên</b>.
             </Hop>
@@ -122,11 +130,7 @@ export default function ManThuThap({
             <div className="the-dau">
               <h2>Nhật ký chạy</h2>
               <span className="the-nho">
-                {v.trangThai === 'dang_chay' ? `⏱ ${dongHo}`
-                  : v.trangThai === 'xong'    ? `✓ xong sau ${dongHo}`
-                  : v.trangThai === 'da_dung' ? `■ đã dừng sau ${dongHo}`
-                  : v.trangThai === 'loi'     ? '⛔ lỗi'
-                  : 'chưa chạy'}
+                {nhan[0] && <Bieu ten={nhan[0]} co={11} />} {nhan[1]}
               </span>
             </div>
             <div className="the-than" style={{ paddingTop: 0 }}>
@@ -151,13 +155,13 @@ export default function ManThuThap({
                         onXuat={bamXuat} dangXuat={dangXuat} />
           ) : v.ketQua ? (
             <div className="the"><div className="trong">
-              <div className="trong-bieu">📭</div>
+              <Bieu ten="hop-trong" co={30} className="bieu trong-bieu" />
               <b>Lần chạy này không ra kết quả nào</b>
               <span>Xem nhật ký bên trên để biết lý do.</span>
             </div></div>
           ) : !v.dangChay && (
             <div className="the"><div className="trong">
-              <div className="trong-bieu">{bieu}</div>
+              <Bieu ten={bieu} co={30} className="bieu trong-bieu" />
               <b>Chưa có kết quả</b>
               <span>Kiểm tra lại từ khóa bên trái rồi bấm <b>Bắt đầu chạy</b>.</span>
             </div></div>

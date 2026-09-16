@@ -50,9 +50,12 @@ NHIP_GIU_KET_NOI = 15
 # 4. TÙY CHỌN HIỆN TRÊN GIAO DIỆN
 # =============================================================================
 # Khung thời gian của Google Trends. Khóa là giá trị gửi cho Google.
+# Giữ nhãn NGẮN: hai ô chọn nằm cạnh nhau nên mỗi ô chỉ rộng khoảng 175px, nhãn
+# dài bị ô chọn của Windows cắt cụt. "30 ngày qua" vốn đã là lựa chọn sẵn nên
+# không cần ghi thêm "(mặc định)".
 KHUNG_THOI_GIAN = [
     ("now 7-d", "7 ngày qua"),
-    ("today 1-m", "30 ngày qua (mặc định)"),
+    ("today 1-m", "30 ngày qua"),
     ("today 3-m", "3 tháng qua"),
     ("today 12-m", "12 tháng qua"),
 ]
