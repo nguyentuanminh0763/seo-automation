@@ -5,6 +5,26 @@
 
 ---
 
+## ⚠️ ĐỌC ĐẦU TIÊN — code mới nhất KHÔNG nằm ở `main`
+
+| | |
+|---|---|
+| Nhánh đang làm việc | **`claude/optimistic-wright-if6kx2`** |
+| Hơn `main` | **6 commit**, đã push hết lên GitHub |
+| Đã gộp vào `main` chưa | ❌ **CHƯA.** Người dùng chọn giữ trên nhánh để dùng thử vài hôm trước khi gộp |
+
+Toàn bộ **giao diện web** (`webapi/`, `web/`, `seo_web.py`, `Chay_giao_dien_web.bat`) chỉ
+có trên nhánh này. Đứng ở `main` thì bấm `Chay_giao_dien_web.bat` sẽ báo thiếu file.
+
+```
+git checkout claude/optimistic-wright-if6kx2
+```
+
+Giao diện cửa sổ Windows cũ (`Chay_giao_dien.bat`, có tab Viết bài) **vẫn chạy được ở cả
+hai nhánh** — nhánh này không sửa gì trong `gui/`.
+
+---
+
 ## Nhận diện dự án
 
 | Mục | Giá trị |

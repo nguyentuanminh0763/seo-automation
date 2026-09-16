@@ -40,7 +40,8 @@ báo hoàn thành khi chưa chạy. Rẻ và nhanh, nhưng **chặn mọi việc
       `nen_dung` truyền xuống `quet_breakout()` **không có vấn đề gì** — đúng như dự đoán,
       chữ ký giống hệt `LuongChay`.
       **Nhưng lộ ra một lỗi khác mà 48 phép thử giả không thể bắt được** (log nhân đôi vô
-      tận) — xem mục 13 trong `PROJECT_STATE.md`. Đã sửa cùng phiên.
+      tận). Đã sửa cùng phiên — chi tiết trong
+      [`docs/ai-journal/2026-09-16_chay-that-giao-dien-web.md`](docs/ai-journal/2026-09-16_chay-that-giao-dien-web.md).
       → File: `webapi/runners.py`, `webapi/jobs.py`, `web/src/api.js`
 - [ ] **Test nút "Copy để dán WordPress" trên WordPress thật** — *tồn từ 2026-08-19*
       ⚠️ **Đây có thể là chỗ chặn thật sự.** Cả dây chuyền là: từ khóa → xếp ưu tiên →
@@ -97,6 +98,16 @@ báo hoàn thành khi chưa chạy. Rẻ và nhanh, nhưng **chặn mọi việc
 - [x] 🔴 **CHẠY THẬT MỘT LẦN QUA GIAO DIỆN WEB** — *2026-09-16*, xem Giai đoạn 0
 - [x] Sửa lỗi nhật ký nhân đôi vô tận sau khi việc chạy xong — *2026-09-16*
       Chỉ lộ ra khi chạy thật qua trình duyệt. `web/src/api.js`
+- [x] **Làm lại giao diện theo yêu cầu người dùng** — *2026-09-16*
+      Bỏ hết emoji, thay bằng icon SVG một màu (`web/src/components/Bieu.jsx`, 19 hình,
+      không cài thư viện) · hạ độ rực màu và cho nền sáng bộ màu đậm riêng · thanh bên
+      thu gọn còn 60px, nhớ lựa chọn · khung bám chiều cao cửa sổ, ô nhập/log/bảng cao
+      theo `vh` → màn 1440×900 từ **thừa 84px phải cuộn** xuống **0px**.
+      ⚠️ **Đừng đổi ngược lại thành pixel cố định** — đó chính là thứ vừa sửa.
+- [x] **Đổi tên thành Đô Lar** — *2026-09-16*
+      Thanh bên, tiêu đề tab, biểu tượng tab, cửa sổ đen, tiền tố tên file xuất ra.
+      ⚠️ **CỐ Ý giữ `giaphongpc.vn`** ở `prompts/`, `docs/BUSINESS_OVERVIEW.md`,
+      `writer/config.py` — đó là website mà bài viết nhắm tới, không phải chủ công cụ.
 - [ ] Màn Viết bài trên web — người dùng chủ động hoãn, làm 2 màn thu thập trước.
       Khi làm: phải cấp **khóa riêng** trong `webapi/jobs.py` (gọi OpenAI/Gemini chứ không
       gọi Google, bắt chờ Suggest 13 phút là vô lý), và thêm `"writer": "writer"` vào
