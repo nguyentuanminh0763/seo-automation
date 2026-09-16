@@ -38,6 +38,11 @@ _*.txt
 _*.html
 _*.log
 
+# Trừ file __init__.py của package: nó cũng bắt đầu bằng dấu gạch dưới nên bị
+# luật trên nuốt mất. Các package cũ (trends/, gui/...) không dính vì đã được
+# commit từ trước khi luật này ra đời — package MỚI thì im lặng biến mất.
+!__init__.py
+
 # =============================================================================
 # HỆ ĐIỀU HÀNH / IDE
 # =============================================================================
