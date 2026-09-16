@@ -68,11 +68,24 @@ export function ngheViec(ma, khiCoSuKien) {
   const nguon = new EventSource(`/api/viec/${ma}/dong`)
 
   nguon.onmessage = (sk) => {
-    try { khiCoSuKien(JSON.parse(sk.data)) } catch { /* bỏ qua gói vỡ */ }
+    let suKien
+    try { suKien = JSON.parse(sk.data) } catch { return /* bỏ qua gói vỡ */ }
+
+    // Việc chạy xong -> PHẢI tự đóng kênh ở đây.
+    // Máy chủ đóng kênh một cách bình thường, nhưng EventSource coi mọi lần
+    // dòng chảy kết thúc là rớt mạng và tự kết nối lại sau vài giây. Kết nối
+    // mới được máy chủ phát lại toàn bộ lịch sử, nên nhật ký bị chép thêm một
+    // lần nữa — cứ vài giây lại một lần, không bao giờ dừng.
+    if (suKien.loai === 'ket_thuc') nguon.close()
+
+    khiCoSuKien(suKien)
   }
 
-  // EventSource tự kết nối lại khi rớt mạng. Nhưng khi việc đã chạy xong, máy
-  // chủ đóng kênh — nếu không tự đóng ở đây thì trình duyệt sẽ gọi lại vô tận.
+  // Chốt chặn cuối: trình duyệt chịu thua hẳn (máy chủ tắt giữa chừng).
+  // KHÔNG dùng chỗ này để bắt lúc việc chạy xong — đã thử và SAI: máy chủ đóng
+  // kênh bình thường thì readyState chuyển sang CONNECTING (đang kết nối lại),
+  // không phải CLOSED, nên nhánh dưới không bao giờ chạy. Việc xong được bắt ở
+  // onmessage bên trên.
   nguon.onerror = () => {
     if (nguon.readyState === EventSource.CLOSED) khiCoSuKien({ loai: 'ket_thuc' })
   }
