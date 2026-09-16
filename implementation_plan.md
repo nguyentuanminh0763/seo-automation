@@ -34,14 +34,14 @@ báo hoàn thành khi chưa chạy. Rẻ và nhanh, nhưng **chặn mọi việc
       thật lần nào**. Cần đo: giây thứ mấy chữ đầu tiên hiện ra, log ghi token suy nghĩ
       chiếm bao nhiêu %.
       → File: `writer/providers.py`, `gui/tab_writer.py`
-- [ ] **Chạy thật 1 lần qua GIAO DIỆN WEB** — *thêm 2026-09-16*
-      48 phép thử đều dùng dữ liệu giả (cố ý: gọi Google thật nhiều lần lúc phát triển là
-      cách nhanh nhất để bị chặn IP). Chỗ chưa chắc: `nen_dung` truyền xuống
-      `quet_breakout()` nay là hàm của lớp `Viec` thay vì `LuongChay` — chữ ký giống hệt
-      và chạy đúng với bản giả, nhưng luật dự án cấm báo xong khi chưa gọi thật.
-      Cách làm: bấm đúp `Chay_giao_dien_web.bat`, màn Trends, để 5 từ khóa thôi, bấm Chạy.
-      Ra được dòng nào là xong.
-      → File: `webapi/runners.py`, `webapi/jobs.py`
+- [x] **Chạy thật 1 lần qua GIAO DIỆN WEB** — *xong 2026-09-16*
+      Đã chạy 3 lượt Trends thật (5 từ khóa/lượt), mỗi lượt 4,9–6 giây, ra dòng Breakout
+      thật, xuất Excel bằng đúng nút trên màn hình rồi mở lại bằng pandas.
+      `nen_dung` truyền xuống `quet_breakout()` **không có vấn đề gì** — đúng như dự đoán,
+      chữ ký giống hệt `LuongChay`.
+      **Nhưng lộ ra một lỗi khác mà 48 phép thử giả không thể bắt được** (log nhân đôi vô
+      tận) — xem mục 13 trong `PROJECT_STATE.md`. Đã sửa cùng phiên.
+      → File: `webapi/runners.py`, `webapi/jobs.py`, `web/src/api.js`
 - [ ] **Test nút "Copy để dán WordPress" trên WordPress thật** — *tồn từ 2026-08-19*
       ⚠️ **Đây có thể là chỗ chặn thật sự.** Cả dây chuyền là: từ khóa → xếp ưu tiên →
       viết → **dán lên web**. Khâu cuối chưa ai chạy thử. Hỏng thì mọi việc khác vô nghĩa.
@@ -94,7 +94,9 @@ báo hoàn thành khi chưa chạy. Rẻ và nhanh, nhưng **chặn mọi việc
 - [x] Nút Dừng giữa chừng, giữ nguyên kết quả đã thu — *2026-09-16*
 - [x] Chốt an toàn: chỉ nghe 127.0.0.1, chặn Host lạ, chặn đường dẫn lạ — *2026-09-16*
 - [x] Hai công cụ không chạy song song được (chống chặn IP) — *2026-09-16*
-- [ ] 🔴 **CHẠY THẬT MỘT LẦN QUA GIAO DIỆN WEB** — xem Giai đoạn 0
+- [x] 🔴 **CHẠY THẬT MỘT LẦN QUA GIAO DIỆN WEB** — *2026-09-16*, xem Giai đoạn 0
+- [x] Sửa lỗi nhật ký nhân đôi vô tận sau khi việc chạy xong — *2026-09-16*
+      Chỉ lộ ra khi chạy thật qua trình duyệt. `web/src/api.js`
 - [ ] Màn Viết bài trên web — người dùng chủ động hoãn, làm 2 màn thu thập trước.
       Khi làm: phải cấp **khóa riêng** trong `webapi/jobs.py` (gọi OpenAI/Gemini chứ không
       gọi Google, bắt chờ Suggest 13 phút là vô lý), và thêm `"writer": "writer"` vào

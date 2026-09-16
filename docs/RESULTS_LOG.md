@@ -11,8 +11,31 @@
 
 | Ngày giờ | Tham số | Số seed | Breakout thu được | Thời gian | Ghi chú |
 |---|---|---:|---:|---:|---|
+| 2026-09-16 10:45 | giao diện WEB, 30 ngày, VN | 5 | **1** | 6,0 giây | ✅ Chạy lại để xác minh bản vá log nhân đôi. Xuất Excel bằng nút trên màn hình |
+| 2026-09-16 10:42 | giao diện WEB, 30 ngày, VN | 5 | **2** | 4,9 giây | ⚠️ Lần này lộ lỗi log nhân đôi vô tận (27 bản sao / 33 lần kết nối lại) |
+| 2026-09-16 10:39 | giao diện WEB, 30 ngày, VN | 5 | **1** | 5,4 giây | ✅ **Lần đầu giao diện web gọi Google thật.** Xuất Excel qua API, đọc lại bằng pandas OK |
 | 2026-08-19 15:07 | mặc định | 20 | **4** | 418 giây | ⚠️ 1 lô bị Google chặn, bỏ qua 5 seed. Do chạy nhiều lần liên tiếp |
 | 2026-08-19 14:48 | mặc định | 20 | **7** | 53 giây | ✅ Lần chạy sạch đầu tiên |
+
+### Xác minh giao diện web (2026-09-16)
+
+Cùng 5 từ khóa `rtx 5060 ti · rtx 5060 · cpu hang tray · tan nhiet nuoc · ram ddr5`,
+chạy 3 lượt cách nhau vài phút. **Tổng 3 lượt hỏi Google** — vẫn ít hơn một lần chạy bình
+thường (20 seed = 4 nhóm = 4 lượt hỏi). Không lượt nào bị chặn.
+
+| Lượt | Ra dòng | Từ khóa Breakout thu được | Tăng trưởng |
+|---|---:|---|---:|
+| 10:39 | 1 | `rtx 5060 ti 16 gb` | 57.500% |
+| 10:42 | 2 | `rtx 5060 ti 16 gb` · `rtx 4070 super vs rtx` | 70.200% · 57.450% |
+| 10:45 | 1 | `zotac gaming geforce rtx 5060 ti 16gb twin edge` | 11.450% |
+
+**Điều đáng chú ý:** cùng 5 từ khóa, cùng khung thời gian, ba lượt cách nhau 3 phút cho ra
+**ba kết quả khác nhau**. Google Trends `related_queries()` vốn không ổn định giữa các lần
+gọi. Đây là bản chất nguồn dữ liệu, không phải lỗi công cụ — nhưng có nghĩa là **đừng kết
+luận gì từ một lần chạy duy nhất**, và con số Growth % của một lần chạy chỉ là ảnh chụp.
+
+**Chưa chạy Suggest qua giao diện web** — cố ý. Mất 11 phút và hơn 1.000 lượt hỏi Google,
+mà nó đi qua đúng đường dẫn mã như Trends (`webapi/jobs.py` → `webapi/runners.py`).
 
 ### Từ khóa Breakout đáng chú ý đã tìm được
 

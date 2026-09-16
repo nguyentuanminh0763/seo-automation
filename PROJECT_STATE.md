@@ -1,6 +1,6 @@
 # SEO Automation — Project State
 
-> **Cập nhật lần cuối:** 2026-09-16 (Giao diện web React + FastAPI cho hai công cụ thu thập)
+> **Cập nhật lần cuối:** 2026-09-16 (Giao diện web React + FastAPI — **đã chạy thật**)
 > **Trạng thái tổng thể:** ✅ Cả hai công cụ đã chạy thật, ra kết quả thật, đã đẩy lên GitHub
 
 ---
@@ -65,7 +65,38 @@ xuất Excel đọc lại được bằng pandas và tiếng Việt không vỡ;
 429 giả lập không làm sập máy chủ; sắp xếp cột số đúng theo giá trị; màn hình 430px không
 tràn ngang; không lỗi JavaScript.
 
-**⚠️ CHƯA gọi Google thật qua giao diện web lần nào** — xem mục 13 trong bảng vấn đề tồn tại.
+### ✅ Đã chạy thật trên máy người dùng (2026-09-16, cùng ngày)
+
+Chạy **3 lượt Google Trends thật** qua trình duyệt, mỗi lượt đúng 5 từ khóa (= 1 nhóm =
+1 lượt hỏi Google), 4,9–6 giây mỗi lượt. Ra kết quả thật mỗi lần. Bấm **đúng nút Excel trên
+màn hình**, file mở lại được bằng pandas, đủ 8 cột, tiếng Việt không vỡ.
+
+Cố ý **không chạy Suggest**: mất 11 phút và hơn 1.000 lượt hỏi Google, rủi ro chặn IP cao mà
+không thêm được gì cho việc xác minh — nó đi qua đúng đường dẫn mã như Trends.
+
+**Điều nghi ngờ nhất hóa ra không sao.** `nen_dung` truyền xuống `quet_breakout()` nay là hàm
+của lớp `Viec` thay vì `LuongChay` — chạy đúng ngay lần đầu, vì hợp đồng chỉ là "hàm không
+tham số trả về bool" và cả hai lớp đều thỏa.
+
+**Nhưng chạy thật lộ ra một lỗi khác mà 48 phép thử giả không thể bắt được:**
+
+> Việc chạy xong là **nhật ký bắt đầu tự chép lại chính nó, vài giây một lần, không bao giờ
+> dừng.** Đo thật: 27 bản sao và vẫn đang tăng, 33 lần trình duyệt kết nối lại.
+
+Nguyên nhân: máy chủ đóng kênh SSE một cách bình thường khi việc xong, nhưng `EventSource`
+của trình duyệt coi **mọi** lần dòng chảy kết thúc là rớt mạng và tự kết nối lại. Kết nối mới
+được máy chủ phát lại toàn bộ lịch sử — đúng tính năng "tải lại trang vẫn thấy tiến trình" —
+nên log bị cộng thêm một lần nữa, lặp vô tận.
+
+Chốt `onerror` viết sẵn để chặn việc này **không bao giờ chạy**: máy chủ đóng kênh bình thường
+thì `readyState` chuyển sang `CONNECTING` (đang kết nối lại) chứ không phải `CLOSED`.
+
+Cách sửa (`web/src/api.js`, 1 dòng): máy chủ vốn đã gửi sự kiện `ket_thuc` — nhận được thì tự
+đóng kênh. Chạy thật lại: **1 lần kết nối, 1 bản log**, so với 33 và 27 trước đó.
+
+**Vì sao 48 phép thử không bắt được:** chúng dựng phản hồi giả rồi cho đi qua hàm xử lý. Lỗi
+này không nằm trong code của dự án — nó nằm ở **hành vi mặc định của trình duyệt** sau khi
+máy chủ đóng kết nối. Chỉ có trình duyệt thật chờ đủ vài giây sau khi việc xong mới lộ ra.
 
 Nhật ký chi tiết: [`docs/ai-journal/2026-09-16_giao-dien-web-react.md`](docs/ai-journal/2026-09-16_giao-dien-web-react.md)
 
@@ -366,8 +397,9 @@ bàn lại chuyện đã chốt.
 | 10 | **Chữ chạy dần và mức suy nghĩ chưa chạy thật lần nào** | **Cao** | Đã kiểm bằng phản hồi giả (62 phép thử đúng hết, cả OpenAI lẫn Gemini) nhưng chưa gọi API thật lần nào. Việc đầu tiên phiên sau: viết 1 bài, xem chữ có chạy ra không, đọc log xem token suy nghĩ chiếm bao nhiêu % |
 | 11 | Claude chưa có chữ chạy dần | Thấp | OpenAI và Gemini đã có. Claude thì `ANTHROPIC_API_KEY` đang trống nên không kiểm chứng được — chưa làm |
 | 12 | Chỉ OpenAI chỉnh được mức suy nghĩ | Thấp | Gemini dùng `thinkingLevel`, Claude dùng `effort` — tên và cách gọi khác hẳn, chưa làm. Riêng việc ĐỌC số token suy nghĩ thì Gemini đã có |
-| 13 | **Giao diện web chưa gọi Google thật lần nào** | **Cao** | 48 phép thử đều dùng dữ liệu giả (cố ý — gọi thật nhiều lần lúc phát triển là cách nhanh nhất để bị chặn IP). Chỗ chưa chắc: `nen_dung` truyền xuống `quet_breakout()` nay là hàm của lớp `Viec` thay vì `LuongChay`. Chữ ký giống hệt và đã chạy đúng với bản giả, nhưng luật dự án cấm báo xong khi chưa chạy thật. Việc cần làm: mở giao diện web, chạy Trends với 5 từ khóa, xem có ra dòng nào không |
+| 13 | ~~Giao diện web chưa gọi Google thật lần nào~~ | ✅ **XONG 2026-09-16** | Đã chạy 3 lượt Trends thật qua trình duyệt, ra kết quả thật, xuất Excel bằng đúng nút trên màn hình. `nen_dung` **không có vấn đề gì**. Nhưng lần chạy thật lộ ra một lỗi khác mà 48 phép thử giả không thể bắt được — xem mục 15 |
 | 14 | Giao diện web chưa có màn Viết bài | Thấp | Người dùng chủ động chọn làm 2 màn thu thập trước. Muốn viết bài thì vẫn dùng `Chay_giao_dien.bat` (tkinter) |
+| 15 | Tải lại trang là mất kết quả đang xem | Thấp | Kết quả **vẫn còn nguyên trong bộ nhớ máy chủ** (`/api/viec` đọc được), nhưng giao diện không nhớ mã việc nên không nối lại được. Phần phát lại lịch sử ở `webapi/jobs.py` đã viết sẵn mà chưa ai dùng tới. Đáng làm vì Suggest chạy 13 phút, lỡ tay F5 là nhìn màn hình trống. Cách sửa: nhớ mã việc vào `localStorage`, lúc mở trang thì nối lại |
 
 ---
 
