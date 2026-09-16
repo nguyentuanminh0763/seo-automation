@@ -1,6 +1,6 @@
 # SEO Automation — Project State
 
-> **Cập nhật lần cuối:** 2026-09-16 (Giao diện web React + FastAPI — **đã chạy thật**)
+> **Cập nhật lần cuối:** 2026-09-16 (Giao diện web — đã chạy thật, đã làm lại giao diện)
 > **Trạng thái tổng thể:** ✅ Cả hai công cụ đã chạy thật, ra kết quả thật, đã đẩy lên GitHub
 
 ---
@@ -97,6 +97,32 @@ Cách sửa (`web/src/api.js`, 1 dòng): máy chủ vốn đã gửi sự kiện
 **Vì sao 48 phép thử không bắt được:** chúng dựng phản hồi giả rồi cho đi qua hàm xử lý. Lỗi
 này không nằm trong code của dự án — nó nằm ở **hành vi mặc định của trình duyệt** sau khi
 máy chủ đóng kết nối. Chỉ có trình duyệt thật chờ đủ vài giây sau khi việc xong mới lộ ra.
+
+### Làm lại giao diện theo yêu cầu người dùng (2026-09-16, cùng ngày)
+
+**File sửa:** `web/src/` (9 file, thêm `components/Bieu.jsx`), `webapi/config.py`,
+`webapi/server.py`, `seo_web.py`, `Chay_giao_dien_web.bat`, `trends/config.py`,
+`suggest/config.py`
+
+Bốn việc người dùng nêu:
+
+| Yêu cầu | Đã làm |
+|---|---|
+| Icon đừng màu mè, chuyên nghiệp hơn | Bỏ hết emoji, thay bằng **icon SVG kẻ nét một màu** (`components/Bieu.jsx`, 19 hình, không cài thư viện). Icon ăn theo `currentColor` nên tự đổi theo nền sáng/tối — emoji thì không |
+| Thanh bên thu ra vào được | Thu lại còn **60px chỉ có icon**, nhớ lựa chọn qua `localStorage` |
+| Vừa màn hình, hạn chế cuộn | Khung ôm đúng chiều cao cửa sổ, **chỉ cột nội dung cuộn**. Ô nhập, ô log, bảng kết quả cao theo `vh` thay vì số pixel cố định. Hai ô chọn ngắn xếp cạnh nhau |
+| Không để giaphongpc.vn, đổi thành **Đô Lar** | Thanh bên, tiêu đề tab, biểu tượng tab, dòng chữ trong cửa sổ đen, và **tiền tố tên file xuất ra** |
+
+**Đo được:** màn hình 1440×900 trước đây thừa **84px phải cuộn**, nay **vừa khít, 0px**.
+
+**Tiện thể sửa một lỗi màu:** nền sáng và nền tối dùng chung một bộ màu, nên chữ màu trên
+nền trắng bạc phếch (độ tương phản ~3:1). Nay nền sáng có bộ màu đậm riêng. Các mức nền mờ
+và viền chuyển sang pha bằng `color-mix` từ màu gốc, nên sửa một dòng màu là cả bộ đổi theo
+— bản đầu ghi tay từng mã hex kèm alpha (`#4f8cff40`) nên sửa màu là sót.
+
+**Chỗ CỐ Ý giữ nguyên `giaphongpc.vn`:** `prompts/`, `docs/BUSINESS_OVERVIEW.md`,
+`writer/config.py`. Đó là **website mà bài viết nhắm tới** (internal link, tên miền trong
+bài), không phải tên chủ công cụ. Đổi là hỏng nội dung bài.
 
 Nhật ký chi tiết: [`docs/ai-journal/2026-09-16_giao-dien-web-react.md`](docs/ai-journal/2026-09-16_giao-dien-web-react.md)
 

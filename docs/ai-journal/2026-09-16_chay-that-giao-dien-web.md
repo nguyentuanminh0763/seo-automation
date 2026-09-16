@@ -139,3 +139,81 @@ máy chủ vẫn đang chạy ngon lành.
 web/src/api.js      — bản vá (1 dòng) + chú thích cảnh báo về onerror
 web/dist/app.js     — build lại bằng npm run build
 ```
+
+---
+
+# Phần 2 — Làm lại giao diện theo yêu cầu người dùng
+
+Xem xong bản chạy thật, người dùng nêu bốn điểm. Ghi lại cả **lý do kỹ thuật** của từng
+cách giải, vì mấy chỗ này dễ bị phiên sau vô tình phá.
+
+## 1. Bỏ emoji, dùng icon SVG một màu
+
+Bản đầu dùng emoji làm icon: `📈 💡 ⚠️ ✅ ⛔ ℹ️ 🔎 ⏱ 📭 🔍 ⬇ ↺ ☀️ 🌙`.
+
+Vấn đề không phải "xấu" mà là **emoji không phải của mình**: hệ điều hành vẽ, mỗi máy một
+kiểu, màu cố định, và **không đổi theo nền sáng/tối được**. Cái 💡 vàng chóe nằm cạnh chữ
+xám nhạt thì mắt nhìn vào emoji trước, trong khi nó chỉ là trang trí.
+
+Thay bằng `web/src/components/Bieu.jsx` — 19 hình SVG kẻ nét, dùng `currentColor` nên:
+tự lấy màu chữ xung quanh, tự mờ đi khi chữ mờ, in ra vẫn sắc nét.
+
+**Cố ý không cài thư viện icon.** Kéo về vài nghìn icon để xài 19 cái là thêm một thứ phải
+bảo trì mà không được gì. Thêm hình mới chỉ là chép phần trong `<svg>` vào bảng.
+
+## 2. Hạ độ rực của màu, và sửa một lỗi tương phản
+
+Bốn màu có nghĩa đều hạ bớt độ rực. Nhưng lỗi thật nằm chỗ khác: **nền sáng và nền tối dùng
+chung một bộ màu.** `#4f8cff` trên nền đen thì rõ, trên nền trắng thì độ tương phản chỉ
+khoảng 3:1 — chữ màu đọc muốn mỏi mắt. Nay nền sáng có bộ màu đậm riêng.
+
+Các mức nền mờ và viền (`--chinh-mo`, `--chinh-vien`…) nay pha bằng `color-mix()` từ chính
+màu gốc. Bản đầu ghi tay từng mã hex kèm alpha (`#4f8cff40` rải khắp 12 chỗ) nên đổi màu
+chủ đạo là chắc chắn sót vài chỗ.
+
+## 3. Thanh bên thu ra vào
+
+Thu lại còn 60px chỉ có icon, nhớ lựa chọn qua `localStorage` như nút đổi nền.
+
+Chi tiết nhỏ: lúc thu gọn **không còn chỗ cho nút mở lại**, nên chính ô chữ `Đ` làm việc đó
+— rê chuột lên thì nó đổi thành mũi tên. Làm bằng CSS thuần, không thêm state.
+
+## 4. Vừa màn hình, hạn chế cuộn
+
+Ba thay đổi:
+
+- **Khung ôm đúng chiều cao cửa sổ** (`height: 100dvh; overflow: hidden`), chỉ cột nội dung
+  bên phải cuộn. Trước đây cả trang trôi đi nên thanh bên cũng trôi theo.
+  Dùng `100dvh` chứ không phải `100vh` vì trên điện thoại thanh địa chỉ co ra vào.
+- **Ô nhập, ô log, bảng kết quả cao theo `vh`** thay vì số pixel cố định
+  (`clamp(104px, 15vh, 200px)`). Máy màn to thì cao ra, laptop màn thấp thì tự thấp lại
+  thay vì đẩy nút Chạy xuống dưới tầm nhìn.
+- **Hai ô chọn ngắn xếp cạnh nhau** — riêng chỗ này tiết kiệm khoảng 55px.
+
+**Đo thật trên 1440×900:** trước 984px nội dung / 900px màn hình = **thừa 84px phải cuộn**.
+Sau: **900 / 900, thừa 0**.
+
+Kéo theo một chỗ phải sửa: ô chọn hẹp lại nên nhãn `30 ngày qua (mặc định)` bị Windows cắt
+cụt. Bỏ chữ `(mặc định)` — nó vốn đã là lựa chọn sẵn rồi, ghi thêm không nói lên điều gì.
+
+## 5. Đổi tên thành Đô Lar
+
+Người dùng: *"đây là project cá nhân... tôi muốn là tôi"*.
+
+Đã đổi ở mọi chỗ nhìn thấy khi chạy: thanh bên, tiêu đề tab, biểu tượng tab (chữ `Đ` vẽ
+bằng SVG thay cho emoji 🔎), dòng chữ trong cửa sổ đen, tiêu đề cửa sổ `.bat`, và **tiền tố
+tên file xuất ra** (`breakout_dolar_*.xlsx`, `content_keywords_dolar_*.xlsx`).
+
+**Chỗ CỐ Ý giữ nguyên `giaphongpc.vn`:** `prompts/`, `docs/BUSINESS_OVERVIEW.md`,
+`writer/config.py`. Đó là **website mà bài viết nhắm tới** — tên miền đi vào internal link
+và nội dung bài. Đổi chỗ đó là hỏng bài viết, không phải đổi thương hiệu.
+
+Hai file cũ trong `output/` giữ nguyên tên cũ. Không đổi tên file đã có: chúng được nhắc
+tới trong `docs/RESULTS_LOG.md`.
+
+## Kiểm chứng
+
+Không tốn thêm lượt hỏi Google nào — đây là thay đổi hình thức, đường gọi API không đổi.
+Đã mở cả hai màn ở nền tối lẫn nền sáng, thu/mở thanh bên, đo lại chiều cao cuộn bằng code
+trong trình duyệt, và xác nhận **không có lỗi JavaScript nào**. Màn Suggest vẫn gọi được
+`/api/suggest/uoc-tinh` và hiện đúng 11 phút / 1.080 lượt / 45 biến thể.
