@@ -19,12 +19,11 @@ KHÁC MỘT CHỖ SO VỚI BẢN TKINTER:
 
 import logging
 
-# Tên logger của từng công cụ, khai đúng như trong trends/logger.py,
-# suggest/logger.py và writer/logger.py.
+# Tên logger của từng công cụ, khai đúng như trong trends/logger.py và
+# suggest/logger.py. Thêm màn Viết bài sau thì thêm "writer": "writer".
 TEN_LOGGER = {
     "trends": "trends",
     "suggest": "suggest",
-    "writer": "writer",
 }
 
 

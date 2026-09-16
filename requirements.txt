@@ -10,6 +10,13 @@ openpyxl>=3.1
 pytrends>=4.9.2
 requests>=2.31
 
+# --- CHỈ CẦN KHI DÙNG GIAO DIỆN WEB (Chay_giao_dien_web.bat) ----------------
+# Giao diện cửa sổ Windows (Chay_giao_dien.bat) KHÔNG cần hai dòng này — nó
+# dùng tkinter có sẵn trong Python. Thiếu hai dòng này thì chỉ riêng giao diện
+# web không mở được, mọi thứ còn lại chạy bình thường.
+fastapi>=0.115
+uvicorn>=0.30
+
 # --- TÙY CHỌN: chỉ cần khi dùng Claude để viết bài ---------------------------
 # Công cụ viết bài mặc định dùng Google Gemini (miễn phí) qua REST nên KHÔNG
 # cần thư viện nào thêm. Chỉ khi đổi NHA_CUNG_CAP=claude trong file .env mới

@@ -15,8 +15,10 @@ QUY TẮC KẾ THỪA TỪ gui/worker.py:
 
 CHỈ MỘT VIỆC THU THẬP TẠI MỘT THỜI ĐIỂM:
     Trends và Suggest dùng chung một khóa. Chạy song song nghĩa là gấp đôi số
-    lần hỏi Google từ cùng một địa chỉ IP — đúng thứ CLAUDE_RULES.md cấm. Viết
-    bài dùng khóa riêng vì nó gọi OpenAI/Gemini chứ không gọi Google.
+    lần hỏi Google từ cùng một địa chỉ IP — đúng thứ CLAUDE_RULES.md cấm.
+
+    Màn Viết bài (làm sau) phải có khóa RIÊNG, vì nó gọi OpenAI/Gemini chứ
+    không gọi Google — bắt nó chờ Suggest chạy xong 13 phút là vô lý.
 """
 
 import threading
@@ -39,7 +41,6 @@ LOI = "loi"
 KHOA_CUA_LOAI = {
     "trends": "thu_thap",
     "suggest": "thu_thap",
-    "writer": "viet_bai",
 }
 
 
@@ -73,11 +74,6 @@ class Viec:
         self._lich_su: List[dict] = []
         self._nguoi_nghe: List["object"] = []   # hàng đợi của từng kết nối SSE
         self._so_thu_tu = 0
-        # Chữ AI đã viết ra, gom lại thành một chuỗi. Cố ý KHÔNG cất từng mẩu
-        # chữ vào lịch sử: một bài 3.000 từ đi qua đây thành hàng nghìn sự kiện,
-        # giữ hết thì tốn bộ nhớ mà phát lại cũng chậm. Tab mở muộn nhận nguyên
-        # cả đoạn đã viết trong MỘT sự kiện duy nhất.
-        self._van_ban: List[str] = []
 
     # --- Dừng giữa chừng ---------------------------------------------------
 
@@ -101,14 +97,11 @@ class Viec:
             self._so_thu_tu += 1
             su_kien = dict(su_kien, stt=self._so_thu_tu)
 
-            if su_kien.get("loai") == "chu":
-                self._van_ban.append(su_kien.get("chu", ""))
-            else:
-                # Chỉ log mới bị cắt bớt. Sự kiện trạng thái/kết quả phải giữ
-                # đủ, không thì tab mở muộn sẽ không biết việc đã xong chưa.
-                self._lich_su.append(su_kien)
-                if len(self._lich_su) > config.SO_DONG_LOG_GIU:
-                    self._cat_bot_lich_su()
+            # Chỉ log mới bị cắt bớt. Sự kiện trạng thái/kết quả phải giữ đủ,
+            # không thì tab mở muộn sẽ không biết việc đã xong hay chưa.
+            self._lich_su.append(su_kien)
+            if len(self._lich_su) > config.SO_DONG_LOG_GIU:
+                self._cat_bot_lich_su()
 
             nguoi_nghe = list(self._nguoi_nghe)
 
@@ -130,31 +123,16 @@ class Viec:
         """Đẩy một dòng log ra giao diện."""
         self.phat({"loai": "log", "muc": muc, "chu": chu})
 
-    def ghi_chu(self, chu: str) -> None:
-        """Đẩy một mẩu chữ AI vừa viết ra giao diện (chữ chạy dần)."""
-        if chu:
-            self.phat({"loai": "chu", "chu": chu})
-
-    def van_ban_da_viet(self) -> str:
-        """Toàn bộ chữ AI đã viết tính tới lúc này."""
-        with self._khoa:
-            return "".join(self._van_ban)
-
     def dang_ky_nghe(self, hang_doi) -> List[dict]:
         """
-        Một kết nối SSE mới vào nghe. Trả về các sự kiện cần phát lại trước.
+        Một kết nối SSE mới vào nghe. Trả về lịch sử để phát lại trước.
 
-        Sự kiện đầu tiên là toàn bộ chữ đã viết (nếu có), để người dùng tải lại
-        trang giữa lúc AI đang viết vẫn thấy nguyên phần bài đã xong.
+        Nhờ phát lại này mà tải lại trang giữa chừng vẫn thấy nguyên tiến trình
+        đã chạy, thay vì một ô log trống trơn.
         """
         with self._khoa:
             self._nguoi_nghe.append(hang_doi)
-            phat_lai = []
-            if self._van_ban:
-                phat_lai.append({"loai": "van_ban", "chu": "".join(self._van_ban),
-                                 "stt": 0})
-            phat_lai.extend(self._lich_su)
-            return phat_lai
+            return list(self._lich_su)
 
     def huy_nghe(self, hang_doi) -> None:
         with self._khoa:

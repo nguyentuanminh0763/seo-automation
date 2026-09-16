@@ -20,6 +20,10 @@ Dự án: **SEO Automation cho giaphongpc.vn** — hai công cụ Python thu th�
 - Thư mục `output/` **không bao giờ commit** — repo public, đó là dữ liệu kinh doanh.
 - **Không báo "đã xong" khi chưa chạy thật.** Dự án này đã có hơn 15 lỗi chỉ lộ ra khi chạy thật.
 - Giao diện: luồng nền **không được** gọi hàm tkinter nào, kể cả `after()`.
+- Có **hai** giao diện chạy song song: `Chay_giao_dien.bat` (cửa sổ Windows, có tab Viết bài)
+  và `Chay_giao_dien_web.bat` (trình duyệt, chỉ có 2 màn thu thập).
+- Sửa `web/src/` xong **phải chạy `npm run build` rồi commit cả `web/dist/`**, không thì
+  người dùng vẫn thấy bản cũ.
 - Đếm số liệu bài viết bằng **code**, không hỏi AI — nó đếm sai 50–60%.
 - Gemini free: **20 lượt/ngày mỗi model**, đổi model là có hạn mức mới.
 

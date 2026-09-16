@@ -19,10 +19,65 @@ python -m pip install -r requirements.txt
 
 ---
 
-## Giao diện đồ họa
+## Giao diện web (mới)
+
+Giao diện chạy trong trình duyệt, dùng cho **hai công cụ thu thập từ khóa**.
+
+```bash
+python seo_web.py
+```
+
+Trên Windows bấm đúp `Chay_giao_dien_web.bat`. Trình duyệt tự mở; cửa sổ đen là máy chủ,
+đóng nó là tắt.
+
+Cần cài thêm hai thư viện (đã có trong `requirements.txt`):
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Tính năng:
+
+- Hai màn hình: Google Trends và Google Suggest
+- Nhật ký chạy hiện **theo thời gian thực**, không phải chờ xong mới thấy
+- Bảng kết quả: tìm nhanh, sắp xếp theo cột, lọc theo nhóm ý định kèm số lượng
+- Suggest tính trước **số lượt hỏi Google và số phút** ngay khi bạn sửa danh sách từ khóa
+- Nút Dừng giữa chừng, giữ nguyên kết quả đã thu
+- Xuất Excel/CSV và tải thẳng về máy
+- Nền tối / nền sáng
+
+Đóng tab giữa chừng **không làm dừng lần chạy** — mở lại là thấy tiếp tiến trình.
+
+> **Lưu ý an toàn:** máy chủ chỉ nghe ở `127.0.0.1`, không ai ngoài máy bạn vào được.
+> Chi tiết trong [`CLAUDE_RULES.md`](CLAUDE_RULES.md).
+
+### Dành cho người sửa giao diện
+
+Thư mục `web/dist/` là bản đã build, **được commit cố ý** để người dùng không phải cài
+Node.js. Sửa `web/src/` xong phải build lại rồi commit cả thư mục `dist/`:
+
+```bash
+cd web
+npm install
+npm run build
+```
+
+Muốn vừa sửa vừa xem đổi ngay (hot reload):
+
+```bash
+python seo_web.py --dev      # cửa sổ 1
+cd web && npm run dev        # cửa sổ 2, mở http://localhost:5173
+```
+
+Tài liệu API tự sinh: <http://127.0.0.1:8765/docs>
+
+---
+
+## Giao diện cửa sổ Windows
 
 Ứng dụng cửa sổ Windows dùng cả hai công cụ mà không cần gõ lệnh. Viết bằng `tkinter`
-có sẵn trong Python nên **không cần cài thêm thư viện nào**.
+có sẵn trong Python nên **không cần cài thêm thư viện nào**. Đây cũng là giao diện duy
+nhất hiện có **tab Viết bài bằng AI** — giao diện web chưa làm phần đó.
 
 ```bash
 python seo_gui.pyw
@@ -151,7 +206,18 @@ Mỗi file làm đúng một việc, chú thích đầy đủ bằng tiếng Vi�
 │   ├── collector.py        Điều phối toàn bộ quy trình
 │   └── exporter.py         Xuất Excel nhiều sheet
 │
-├── seo_gui.pyw             Điểm chạy giao diện
+├── seo_web.py              Điểm chạy giao diện web
+├── webapi/                 API nối giao diện web với ba package trên —
+│   ├── config.py           KHÔNG chứa logic thu thập, chỉ gọi lại
+│   ├── jobs.py             Quản lý lần chạy nền, cờ dừng, hàng đợi sự kiện
+│   ├── runners.py          Gọi quet_breakout() / thu_thap()
+│   ├── routes.py           Khai báo đường dẫn API
+│   └── server.py           Máy chủ FastAPI + phục vụ file giao diện
+├── web/                    Giao diện React (JavaScript thuần, không TypeScript)
+│   ├── src/                Mã nguồn — sửa ở đây
+│   └── dist/               Bản đã build, ĐƯỢC COMMIT cố ý
+│
+├── seo_gui.pyw             Điểm chạy giao diện cửa sổ
 └── gui/                    Giao diện tkinter — KHÔNG chứa logic thu thập,
     ├── app.py              chỉ gọi lại các hàm trong trends/ và suggest/
     ├── tab_base.py         Khung chung cho hai tab (nhập, chạy, log, kết quả)

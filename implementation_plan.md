@@ -1,6 +1,6 @@
 # Lộ trình triển khai
 
-> Cập nhật lần cuối: 2026-08-23
+> Cập nhật lần cuối: 2026-09-16
 >
 > **Cách dùng:** đánh dấu `[x]` khi xong, kèm ngày. Việc bỏ thì ghi rõ lý do, đừng xóa —
 > để phiên sau không đề xuất lại.
@@ -34,6 +34,14 @@ báo hoàn thành khi chưa chạy. Rẻ và nhanh, nhưng **chặn mọi việc
       thật lần nào**. Cần đo: giây thứ mấy chữ đầu tiên hiện ra, log ghi token suy nghĩ
       chiếm bao nhiêu %.
       → File: `writer/providers.py`, `gui/tab_writer.py`
+- [ ] **Chạy thật 1 lần qua GIAO DIỆN WEB** — *thêm 2026-09-16*
+      48 phép thử đều dùng dữ liệu giả (cố ý: gọi Google thật nhiều lần lúc phát triển là
+      cách nhanh nhất để bị chặn IP). Chỗ chưa chắc: `nen_dung` truyền xuống
+      `quet_breakout()` nay là hàm của lớp `Viec` thay vì `LuongChay` — chữ ký giống hệt
+      và chạy đúng với bản giả, nhưng luật dự án cấm báo xong khi chưa gọi thật.
+      Cách làm: bấm đúp `Chay_giao_dien_web.bat`, màn Trends, để 5 từ khóa thôi, bấm Chạy.
+      Ra được dòng nào là xong.
+      → File: `webapi/runners.py`, `webapi/jobs.py`
 - [ ] **Test nút "Copy để dán WordPress" trên WordPress thật** — *tồn từ 2026-08-19*
       ⚠️ **Đây có thể là chỗ chặn thật sự.** Cả dây chuyền là: từ khóa → xếp ưu tiên →
       viết → **dán lên web**. Khâu cuối chưa ai chạy thử. Hỏng thì mọi việc khác vô nghĩa.
@@ -68,6 +76,32 @@ báo hoàn thành khi chưa chạy. Rẻ và nhanh, nhưng **chặn mọi việc
 - [x] Bảng kết quả có ô lọc nhanh — *2026-08-19*
 - [x] Nút Dừng giữa chừng, giữ lại kết quả đã thu — *2026-08-19*
 - [x] File `.bat` bấm đúp để chạy, không cần gõ lệnh — *2026-08-19*
+
+---
+
+## Giai đoạn 1c — Giao diện web React ✅ HOÀN THÀNH PHẦN THU THẬP (2026-09-16)
+
+> **Ghi chú:** đây là lần thứ hai luật dự án bị đảo theo yêu cầu người dùng. Lần đầu là
+> "giao diện web" (2026-08-19, làm bằng tkinter), lần này là **"không dùng framework nặng"**.
+> Người dùng được trình bày đánh đổi rồi tự chọn FastAPI. Ngoại lệ đã ghi vào
+> `CLAUDE_RULES.md` kèm ranh giới: **chỉ `webapi/` và `web/`**, ba package lõi vẫn phải
+> chạy được bằng dòng lệnh mà không cần FastAPI.
+
+- [x] Máy chủ FastAPI làm cầu nối, không chứa logic thu thập — *2026-09-16*
+- [x] Màn Google Trends và Google Suggest — *2026-09-16*
+- [x] Log chảy theo thời gian thực qua SSE, đóng tab không làm dừng lần chạy — *2026-09-16*
+- [x] Bảng kết quả: tìm nhanh, sắp xếp theo cột, lọc theo nhóm kèm số lượng — *2026-09-16*
+- [x] Nút Dừng giữa chừng, giữ nguyên kết quả đã thu — *2026-09-16*
+- [x] Chốt an toàn: chỉ nghe 127.0.0.1, chặn Host lạ, chặn đường dẫn lạ — *2026-09-16*
+- [x] Hai công cụ không chạy song song được (chống chặn IP) — *2026-09-16*
+- [ ] 🔴 **CHẠY THẬT MỘT LẦN QUA GIAO DIỆN WEB** — xem Giai đoạn 0
+- [ ] Màn Viết bài trên web — người dùng chủ động hoãn, làm 2 màn thu thập trước.
+      Khi làm: phải cấp **khóa riêng** trong `webapi/jobs.py` (gọi OpenAI/Gemini chứ không
+      gọi Google, bắt chờ Suggest 13 phút là vô lý), và thêm `"writer": "writer"` vào
+      `TEN_LOGGER` trong `webapi/log_bridge.py`.
+      ⭐ Cơ hội kèm theo: nút "Copy dán WordPress" hiện phải gọi Windows API qua `ctypes` và
+      **chưa ai test bao giờ**. Trình duyệt có sẵn Clipboard API ghi định dạng `text/html`,
+      nhiều khả năng giải luôn được mục tồn đó ở Giai đoạn 0.
 
 ---
 
@@ -253,7 +287,8 @@ Chưa cam kết. Cân nhắc khi giai đoạn 2 và 3 đã ổn.
 | Việc | Lý do bỏ |
 |---|---|
 | Chuyển sang database (SQLite/Postgres) | Người dùng làm SEO, không phải lập trình viên. Excel là định dạng họ dùng hàng ngày |
-| ~~Giao diện web~~ | ĐÃ ĐẢO QUYẾT ĐỊNH 2026-08-19: người dùng yêu cầu giao diện. Đã làm bằng tkinter (ứng dụng Windows) thay vì web, để không phải cài thêm thư viện |
+| ~~Giao diện web~~ | ĐÃ ĐẢO QUYẾT ĐỊNH **HAI LẦN**. 2026-08-19: làm bằng tkinter thay vì web. 2026-09-16: người dùng yêu cầu lại đúng bản web React, đã làm — xem Giai đoạn 1c. Cả hai giao diện nay chạy song song |
+| ~~Không dùng framework nặng~~ | ĐÃ ĐẢO QUYẾT ĐỊNH 2026-09-16: người dùng tự chọn FastAPI sau khi được trình bày đánh đổi. **Ngoại lệ chỉ áp dụng cho `webapi/` và `web/`** — ba package lõi vẫn không được phụ thuộc framework nào |
 | ~~Dùng API trả phí (Ahrefs, Semrush)~~ | ĐÃ ĐIỀU CHỈNH 2026-08-23: vẫn **không mua gói riêng**, nhưng **đồng nghiệp có Ahrefs** nên sẽ xin file export rồi nhập vào tab 4. Không cần API |
 | Gộp hai công cụ làm một | Chúng trả lời hai câu hỏi khác nhau, tần suất chạy khác nhau. Tách riêng dễ hiểu hơn |
 | Dùng lớp retry sẵn của pytrends | Không tương thích urllib3 2.x. Retry tự viết kiểm soát tốt hơn |

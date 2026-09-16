@@ -1,6 +1,6 @@
 # SEO Automation — Project State
 
-> **Cập nhật lần cuối:** 2026-08-20 (Chữ chạy dần, mức suy nghĩ, đo token suy nghĩ)
+> **Cập nhật lần cuối:** 2026-09-16 (Giao diện web React + FastAPI cho hai công cụ thu thập)
 > **Trạng thái tổng thể:** ✅ Cả hai công cụ đã chạy thật, ra kết quả thật, đã đẩy lên GitHub
 
 ---
@@ -29,7 +29,49 @@ Chi tiết từng lần chạy: [`docs/RESULTS_LOG.md`](docs/RESULTS_LOG.md)
 
 ---
 
-## Cập nhật mới nhất — Tăng tốc cảm nhận khi viết bài (2026-08-20)
+## Cập nhật mới nhất — Giao diện web React (2026-09-16)
+
+**File mới:** package `webapi/` (7 file), thư mục `web/` (giao diện React), `seo_web.py`,
+`Chay_giao_dien_web.bat`
+**File sửa:** `.gitignore`, `requirements.txt`, `CLAUDE_RULES.md`, `README.md`
+
+**Yêu cầu:** người dùng muốn giao diện chuyên nghiệp hơn bản tkinter, và yêu cầu
+**trình bày kiến trúc để duyệt trước** thay vì làm ngay.
+
+**Bốn quyết định người dùng đã chốt:** FastAPI (tôi đề xuất thư viện chuẩn, người dùng chọn
+FastAPI) · commit sẵn bản build để không phải cài Node.js · giữ nguyên tkinter chạy song song
+· **chỉ làm 2 màn thu thập trước**, chưa làm màn Viết bài.
+
+**Kiến trúc:** `Trình duyệt (React) ⇄ HTTP+SSE ⇄ webapi/ (FastAPI) → trends/ · suggest/`.
+`webapi/` **không chứa logic thu thập**, chỉ gọi lại hàm có sẵn — đúng như `gui/`.
+Ba package lõi **không bị sửa một chữ nào**.
+
+**Ba chỗ khó và cách giải:**
+
+| Chỗ khó | Cách giải |
+|---|---|
+| Suggest chạy 13 phút, không nhét vừa một yêu cầu HTTP | Yêu cầu chỉ tạo việc rồi trả mã số; tiến trình đi qua kênh SSE riêng. Hệ quả tốt: **đóng tab không làm dừng lần chạy** |
+| Chống chặn IP | Trends và Suggest dùng chung một khóa, không chạy song song được. Việc thứ hai bị trả 409 kèm giải thích tiếng Việt |
+| Web thì ai cũng mở được | Chỉ nghe 127.0.0.1 · chặn Host lạ (DNS rebinding) · đường dẫn tải file bắt buộc nằm trong `output/` |
+
+**Một bẫy thật phát hiện được:** `.gitignore` có luật `_*.py` (chặn file nháp `_t3.py`)
+**khớp luôn `__init__.py`**. Package cũ thoát vì commit trước khi luật ra đời; package MỚI
+thì `__init__.py` im lặng biến mất và chỉ lộ khi clone về chạy. Đã vá bằng `!__init__.py`.
+
+**Kiểm chứng — 48 phép thử, không gọi Google lần nào:** 27 phép thử backend chạy qua đúng
+ứng dụng FastAPI thật (`TestClient`), 21 phép thử giao diện bằng Playwright điều khiển
+Chromium thật. Đã xác nhận: log chảy theo thời gian thực; bấm Dừng giữ nguyên 90 dòng đã thu;
+xuất Excel đọc lại được bằng pandas và tiếng Việt không vỡ; chặn 3 kiểu đường dẫn lạ; lỗi
+429 giả lập không làm sập máy chủ; sắp xếp cột số đúng theo giá trị; màn hình 430px không
+tràn ngang; không lỗi JavaScript.
+
+**⚠️ CHƯA gọi Google thật qua giao diện web lần nào** — xem mục 13 trong bảng vấn đề tồn tại.
+
+Nhật ký chi tiết: [`docs/ai-journal/2026-09-16_giao-dien-web-react.md`](docs/ai-journal/2026-09-16_giao-dien-web-react.md)
+
+---
+
+## Cập nhật trước đó — Tăng tốc cảm nhận khi viết bài (2026-08-20)
 
 **File đã sửa:** `writer/providers.py`, `writer/settings.py`, `writer/config.py`,
 `writer/generator.py`, `gui/tab_writer.py`, `gui/settings_window.py`,
@@ -324,6 +366,8 @@ bàn lại chuyện đã chốt.
 | 10 | **Chữ chạy dần và mức suy nghĩ chưa chạy thật lần nào** | **Cao** | Đã kiểm bằng phản hồi giả (62 phép thử đúng hết, cả OpenAI lẫn Gemini) nhưng chưa gọi API thật lần nào. Việc đầu tiên phiên sau: viết 1 bài, xem chữ có chạy ra không, đọc log xem token suy nghĩ chiếm bao nhiêu % |
 | 11 | Claude chưa có chữ chạy dần | Thấp | OpenAI và Gemini đã có. Claude thì `ANTHROPIC_API_KEY` đang trống nên không kiểm chứng được — chưa làm |
 | 12 | Chỉ OpenAI chỉnh được mức suy nghĩ | Thấp | Gemini dùng `thinkingLevel`, Claude dùng `effort` — tên và cách gọi khác hẳn, chưa làm. Riêng việc ĐỌC số token suy nghĩ thì Gemini đã có |
+| 13 | **Giao diện web chưa gọi Google thật lần nào** | **Cao** | 48 phép thử đều dùng dữ liệu giả (cố ý — gọi thật nhiều lần lúc phát triển là cách nhanh nhất để bị chặn IP). Chỗ chưa chắc: `nen_dung` truyền xuống `quet_breakout()` nay là hàm của lớp `Viec` thay vì `LuongChay`. Chữ ký giống hệt và đã chạy đúng với bản giả, nhưng luật dự án cấm báo xong khi chưa chạy thật. Việc cần làm: mở giao diện web, chạy Trends với 5 từ khóa, xem có ra dòng nào không |
+| 14 | Giao diện web chưa có màn Viết bài | Thấp | Người dùng chủ động chọn làm 2 màn thu thập trước. Muốn viết bài thì vẫn dùng `Chay_giao_dien.bat` (tkinter) |
 
 ---
 

@@ -9,7 +9,13 @@
 
 - **Không viết lại từ đầu.** Cả hai công cụ đã chạy thật và ra kết quả thật. Chỉ cải tiến từng phần.
 - **Giữ kiến trúc package hiện tại.** Mỗi file làm đúng một việc. Không gộp ngược về một file lớn.
-- **Không chuyển sang TypeScript, không dùng framework nặng.** Đây là script tự động hóa, không phải web app.
+- **Không chuyển sang TypeScript.** Luật này còn nguyên, kể cả trong giao diện web
+  (`web/` viết bằng JavaScript thuần).
+- ~~**Không dùng framework nặng.**~~ **ĐÃ ĐẢO QUYẾT ĐỊNH 2026-09-16.** Người dùng yêu cầu
+  giao diện web chuyên nghiệp hơn và tự chọn FastAPI sau khi được trình bày đánh đổi.
+  Phạm vi của ngoại lệ này: **chỉ `webapi/` và `web/`**. Ba package lõi `trends/`,
+  `suggest/`, `writer/` vẫn không được phép phụ thuộc vào framework nào — chúng phải
+  chạy được bằng dòng lệnh mà không cần cài FastAPI.
 - **Không thêm database.** Kết quả xuất ra Excel/CSV là đủ. Người dùng làm SEO, không phải lập trình viên.
 - **Mọi cấu hình phải nằm trong `config.py`.** Tuyệt đối không hardcode từ khóa, ngưỡng lọc, hay độ trễ vào code logic.
 
@@ -64,7 +70,25 @@ Cách đúng đã áp dụng: luồng nền chỉ cất kết quả vào chính 
 luồng chính định kỳ 120ms kiểm tra xem xong chưa (`gui/tab_base.py`).
 Log cũng đi qua hàng đợi chứ không ghi thẳng lên giao diện.
 
-### 5. Git phải dùng remote HTTPS
+### 5. Giao diện web: mọi thứ chỉ nghe ở 127.0.0.1
+
+`webapi/` đọc được file trên máy và chạy được công cụ thu thập. Ba chốt an toàn trong
+`webapi/server.py` **không được gỡ**:
+
+1. Chỉ nghe `127.0.0.1`. Đổi sang `0.0.0.0` là mở cửa cho cả mạng LAN.
+2. Chỉ nhận yêu cầu có `Host` là localhost (chặn kiểu tấn công DNS rebinding).
+3. Không bật CORS cho nguồn lạ — chỉ mở cổng 5173 khi chạy `python seo_web.py --dev`.
+
+Đường dẫn tải file (`/api/tai-ve/`) phải luôn kiểm tra file nằm trong `output/`.
+Bỏ chốt đó thì một tên file kiểu `../../.env` lôi được API key ra ngoài.
+
+### 6. Hai công cụ thu thập KHÔNG được chạy song song
+
+`webapi/jobs.py` cho Trends và Suggest dùng chung một khóa. Chạy song song = gấp đôi số
+lần hỏi Google từ cùng một IP. Thêm màn Viết bài sau này thì nó phải có khóa **riêng**,
+vì gọi OpenAI/Gemini chứ không gọi Google.
+
+### 7. Git phải dùng remote HTTPS
 
 Khóa SSH trên máy thuộc tài khoản `khuongngocdoan`, không có quyền ghi vào repo của
 `nguyentuanminh0763`. Push qua SSH luôn bị từ chối. Luôn dùng:
@@ -91,6 +115,18 @@ Cả hai công cụ đều dùng API **không chính thức** của Google. Vi p
 - **Thư mục `output/` KHÔNG BAO GIỜ được commit.** Repo đang để public; đó là kế hoạch nội dung
   của doanh nghiệp, đối thủ đọc được là mất lợi thế. Đã chặn trong `.gitignore`.
 - Không đưa số liệu keyword cụ thể vào README hay tài liệu công khai, trừ vài ví dụ minh họa.
+
+---
+
+## Luật về giao diện web
+
+- Thư mục `web/dist/` **được commit** (cố ý). Người dùng không cài Node.js, nên bản build
+  phải nằm sẵn trong repo để bấm đúp là chạy. Sửa `web/src/` xong **phải chạy lại
+  `npm run build` rồi commit cả `web/dist/`**, không thì người dùng vẫn thấy bản cũ.
+- Tên file build ép cố định `app.js` / `app.css` (khai trong `web/vite.config.js`).
+  Không bật lại mã băm của Vite — mỗi lần sửa sẽ sinh tên file mới và làm rác lịch sử git.
+- `webapi/` **không chứa logic thu thập**, giống hệt `gui/`. Nó chỉ gọi lại hàm trong
+  `trends/` và `suggest/`.
 
 ---
 
